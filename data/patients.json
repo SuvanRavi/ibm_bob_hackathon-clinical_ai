@@ -4,7 +4,11 @@
     "patient_name": "Michael Schumacher",
     "patient_age": 45,
     "blood_group": "O+",
-    "allergies": ["Penicillin", "Peanuts", "Latex"],
+    "allergies": [
+      "Penicillin",
+      "Peanuts",
+      "Latex"
+    ],
     "symptom": "Persistent cough and mild fever",
     "prescription": [
       {
@@ -27,7 +31,9 @@
     "patient_name": "Emily Chen",
     "patient_age": 32,
     "blood_group": "A+",
-    "allergies": ["Sulfa drugs"],
+    "allergies": [
+      "Sulfa drugs"
+    ],
     "symptom": "Seasonal allergies",
     "prescription": [
       {
@@ -55,5 +61,26 @@
       }
     ],
     "diagnosis": "Hypertension - Stage 1"
+  },
+  "P004": {
+    "patient_id": "P004",
+    "patient_name": "Slum",
+    "patient_age": 20,
+    "blood_group": "A+",
+    "allergies": [
+      "Corn"
+    ],
+    "symptom": "Cough",
+    "diagnosis": "Phelm",
+    "appointment_details": "Follow up in 1 week",
+    "dietary_restrictions": "No spicy and oily food",
+    "prescription": [
+      {
+        "medication": "Cocaine",
+        "dosage": "2",
+        "duration": "1 month",
+        "notes": "Raw"
+      }
+    ]
   }
 }

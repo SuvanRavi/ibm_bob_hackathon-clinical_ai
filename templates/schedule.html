@@ -8,40 +8,87 @@
 </head>
 <body>
     <!-- Navigation Header -->
-    <header class="navbar">
-        <div class="container">
-            <div class="nav-brand">
-                <svg class="logo-icon" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="14" y="8" width="4" height="16" fill="#2563eb"/>
-                    <rect x="8" y="14" width="16" height="4" fill="#2563eb"/>
-                    <circle cx="16" cy="16" r="14" stroke="#2563eb" stroke-width="2" fill="none"/>
-                </svg>
-                <h1>MedAssistant</h1>
-            </div>
-            <nav class="nav-links">
-                <a href="/" class="nav-link active">Schedule</a>
-                <a href="{{ url_for('appointments') }}" class="nav-link">My Appointments</a>
-                <a href="{{ url_for('profile') }}" class="nav-link">Profile</a>
-            </nav>
+   <header class="navbar">
+    <div class="container">
+        <div class="nav-brand">
+            <svg class="logo-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+                <rect x="14" y="8" width="4" height="16" fill="#2563eb"/>
+                <rect x="8" y="14" width="16" height="4" fill="#2563eb"/>
+                <circle cx="16" cy="16" r="14" stroke="#2563eb" stroke-width="2" fill="none"/>
+            </svg>
+            <h1>MedAssistant</h1>
         </div>
-    </header>
+        <nav class="nav-links" id="main-nav">
+            <!-- Populated by JS based on role -->
+        </nav>
+        <button class="btn btn-secondary" id="logout-btn"
+            style="font-size:13px;height:34px;padding:0 14px;"
+            onclick="logout()">
+            Log out
+        </button>
+    </div>
+</header>
+
+<script>
+    (function () {
+        const role = localStorage.getItem('userRole');
+
+        // If no role set, send to login
+        if (!role) {
+            window.location.href = '/login';
+            return;
+        }
+
+        const currentPath = window.location.pathname;
+
+        // Doctor-only page guard — patients can't access /docprofile
+        if (role === 'patient' && currentPath === '/docprofile') {
+            window.location.href = '/';
+            return;
+        }
+
+        // Patient-only page guard — doctors land on /docprofile only
+        if (role === 'doctor' && currentPath === '/') {
+            window.location.href = '/docprofile';
+            return;
+        }
+
+        const nav = document.getElementById('main-nav');
+
+        const patientLinks = `
+            <a href="/" class="nav-link ${currentPath === '/' ? 'active' : ''}">Schedule</a>
+            <a href="/appointments" class="nav-link ${currentPath === '/appointments' ? 'active' : ''}">My Appointments</a>
+            <a href="/profile" class="nav-link ${currentPath === '/profile' ? 'active' : ''}">Profile</a>
+        `;
+
+        const doctorLinks = `
+            <a href="/docprofile" class="nav-link ${currentPath === '/docprofile' ? 'active' : ''}">Doctor Profile</a>
+            <a href="/patientinfo" class="nav-link ${currentPath === '/patientinfo' ? 'active' : ''}">Patient Info</a>
+        `;
+
+        nav.innerHTML = role === 'doctor' ? doctorLinks : patientLinks;
+    })();
+
+    function logout() {
+        localStorage.removeItem('userRole');
+        window.location.href = '/login';
+    }
+</script>
 
     <!-- Main Content -->
     <main class="main-content">
         <div class="container">
-            <!-- Page Title -->
             <div class="page-header">
                 <h2>Schedule Follow-Up Appointment</h2>
                 <p class="subtitle">Select a convenient date and time for your next consultation</p>
             </div>
 
-            <!-- Two Column Layout -->
             <div class="content-grid">
                 <!-- Left Column: Appointment Booking -->
                 <section class="booking-section">
                     <div class="card">
                         <h3 class="card-title">Book Your Appointment</h3>
-                        
+
                         <!-- Date Selection -->
                         <div class="form-group">
                             <label for="appointment-date" class="form-label">Select Date</label>
@@ -58,6 +105,19 @@
                             <label class="form-label">Available Time Slots</label>
                             <div id="time-slots-container" class="time-slots-grid">
                                 <p class="placeholder-text">Please select a date to view available time slots</p>
+                            </div>
+                        </div>
+
+                        <!-- ✅ Doctor Selector — appears after time slot is picked -->
+                        <div id="doctor-selector-area" style="display:none;">
+                            <div class="doctor-selector-panel">
+                                <div class="doctor-selector-header">
+                                    <span class="doctor-selector-label">Consulting Doctor</span>
+                                    <span class="doctor-selector-hint">Choose your preferred doctor</span>
+                                </div>
+                                <div id="doctor-selector-body">
+                                    <!-- Populated by JS -->
+                                </div>
                             </div>
                         </div>
 
@@ -112,7 +172,7 @@
                     {% endif %}
                 </section>
 
-                <!-- Right Column: Reminders and Tasks -->
+                <!-- Right Column -->
                 <aside class="reminders-section">
                     <!-- Medication Reminders -->
                     <div class="card">
@@ -187,69 +247,106 @@
         </div>
     </div>
 
-    <!-- JavaScript for interactivity -->
     <script type="application/json" id="available-slots-data">
         {{ available_slots | tojson | safe }}
     </script>
-    
+
     <script>
-        // Store available slots data
         const availableSlots = JSON.parse(document.getElementById('available-slots-data').textContent);
         let selectedDate = null;
         let selectedTime = null;
         let selectedDoctor = null;
-        let doctorsData = {};
 
-        // Fetch doctors data on page load
-        async function loadDoctors() {
-            try {
-                const response = await fetch('/api/doctors');
-                const data = await response.json();
-                if (data.success && data.doctors) {
-                    // Store doctors by ID for easy lookup
-                    data.doctors.forEach(doctor => {
-                        doctorsData[doctor.doctor_id] = doctor;
-                    });
-                    // Set default doctor (first one)
-                    selectedDoctor = data.doctors[0];
-                    updateDoctorDisplay();
-                }
-            } catch (error) {
-                console.error('Error loading doctors:', error);
-                // Fallback to default
-                selectedDoctor = {
-                    doctor_id: 'D001',
-                    name: 'Dr. Meredith Grey',
-                    specialty: 'General Practitioner'
-                };
-                updateDoctorDisplay();
-            }
+        function loadDoctorsFromStorage() {
+            const saved = JSON.parse(localStorage.getItem('savedDoctorProfiles') || '[]');
+            return saved.filter(d => d.name && d.name.trim() !== '');
         }
 
-        function updateDoctorDisplay() {
-            if (selectedDoctor) {
-                document.getElementById('selected-doctor').textContent = selectedDoctor.name;
-                document.getElementById('selected-specialty').textContent = selectedDoctor.specialty;
+        function buildDoctorSelector() {
+            const doctors = loadDoctorsFromStorage();
+            const selectorArea = document.getElementById('doctor-selector-area');
+            const selectorBody = document.getElementById('doctor-selector-body');
+
+            selectorArea.style.display = 'block';
+            selectorBody.innerHTML = '';
+
+            if (doctors.length === 0) {
+                selectorBody.innerHTML = `
+                    <div class="doctor-empty">
+                        No doctors saved yet.
+                        <a href="/docprofile" class="doctor-empty-link">Add one in Doctor Profile →</a>
+                    </div>
+                `;
+                selectedDoctor = null;
+                document.getElementById('selected-doctor').textContent = 'None assigned';
+                document.getElementById('selected-specialty').textContent = '-';
+                return;
             }
+
+            const grid = document.createElement('div');
+            grid.className = 'doctor-options-grid';
+
+            doctors.forEach((doc, idx) => {
+                const card = document.createElement('div');
+                card.className = 'doctor-option-card' + (idx === 0 ? ' selected' : '');
+                card.dataset.index = idx;
+
+                const initials = doc.name
+                    .split(' ')
+                    .filter(w => w.length > 0)
+                    .slice(0, 2)
+                    .map(w => w[0].toUpperCase())
+                    .join('');
+
+                card.innerHTML = `
+                    <div class="doctor-option-avatar">${initials}</div>
+                    <div class="doctor-option-info">
+                        <div class="doctor-option-name">${doc.name}</div>
+                        <div class="doctor-option-specialty">${doc.specialty || 'No specialty'}</div>
+                        ${doc.experience ? `<div class="doctor-option-exp">${doc.experience} yrs experience</div>` : ''}
+                    </div>
+                    <div class="doctor-option-check">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                `;
+
+                card.addEventListener('click', function () {
+                    document.querySelectorAll('.doctor-option-card').forEach(c => c.classList.remove('selected'));
+                    this.classList.add('selected');
+                    const i = parseInt(this.dataset.index);
+                    selectedDoctor = loadDoctorsFromStorage()[i];
+                    document.getElementById('selected-doctor').textContent = selectedDoctor.name;
+                    document.getElementById('selected-specialty').textContent = selectedDoctor.specialty || '-';
+                });
+
+                grid.appendChild(card);
+            });
+
+            selectorBody.appendChild(grid);
+
+            // Auto-select first
+            selectedDoctor = doctors[0];
+            document.getElementById('selected-doctor').textContent = doctors[0].name;
+            document.getElementById('selected-specialty').textContent = doctors[0].specialty || '-';
         }
 
-        // Load doctors when page loads
-        loadDoctors();
-
-        // Date selection handler
-        document.getElementById('appointment-date').addEventListener('change', function(e) {
+        // Date change handler
+        document.getElementById('appointment-date').addEventListener('change', function (e) {
             selectedDate = e.target.value;
             selectedTime = null;
-            
+
             const slotsContainer = document.getElementById('time-slots-container');
             const confirmationArea = document.getElementById('confirmation-area');
-            
-            // Hide confirmation area
+            const selectorArea = document.getElementById('doctor-selector-area');
+
             confirmationArea.style.display = 'none';
-            
+            selectorArea.style.display = 'none';
+
             if (selectedDate && availableSlots[selectedDate]) {
                 const slots = availableSlots[selectedDate];
-                
+
                 if (slots.length === 0) {
                     slotsContainer.innerHTML = '<p class="placeholder-text">No available slots for this date</p>';
                 } else {
@@ -259,26 +356,23 @@
                         slotCard.className = 'time-slot-card';
                         slotCard.textContent = time;
                         slotCard.dataset.time = time;
-                        
-                        slotCard.addEventListener('click', function() {
-                            // Remove selected class from all slots
-                            document.querySelectorAll('.time-slot-card').forEach(card => {
-                                card.classList.remove('selected');
-                            });
-                            
-                            // Add selected class to clicked slot
+
+                        slotCard.addEventListener('click', function () {
+                            document.querySelectorAll('.time-slot-card').forEach(c => c.classList.remove('selected'));
                             this.classList.add('selected');
                             selectedTime = this.dataset.time;
-                            
-                            // Show confirmation area
+
+                            // Update confirmation summary
                             document.getElementById('selected-date').textContent = selectedDate;
                             document.getElementById('selected-time').textContent = selectedTime;
+
+                            // Show doctor selector first, then confirmation card
+                            buildDoctorSelector();
                             confirmationArea.style.display = 'block';
-                            
-                            // Smooth scroll to confirmation
+
                             confirmationArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                         });
-                        
+
                         slotsContainer.appendChild(slotCard);
                     });
                 }
@@ -287,74 +381,72 @@
             }
         });
 
-        // Cancel selection handler
-        document.getElementById('cancel-selection').addEventListener('click', function() {
-            document.querySelectorAll('.time-slot-card').forEach(card => {
-                card.classList.remove('selected');
-            });
+        // Cancel selection
+        document.getElementById('cancel-selection').addEventListener('click', function () {
+            document.querySelectorAll('.time-slot-card').forEach(c => c.classList.remove('selected'));
             document.getElementById('confirmation-area').style.display = 'none';
+            document.getElementById('doctor-selector-area').style.display = 'none';
             selectedTime = null;
+            selectedDoctor = null;
         });
 
-        // Confirm booking handler
-        document.getElementById('confirm-booking').addEventListener('click', function() {
+        // Confirm booking
+        document.getElementById('confirm-booking').addEventListener('click', function () {
             if (!selectedDate || !selectedTime) {
-                alert('Please select a date and time');
+                alert('Please select a date and time.');
+                return;
+            }
+            if (!selectedDoctor) {
+                alert('Please select a doctor before confirming.');
                 return;
             }
 
-            // Send booking request
             fetch('/api/book', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     date: selectedDate,
                     time: selectedTime,
-                    doctor_id: selectedDoctor ? selectedDoctor.doctor_id : 'D001'
+                    doctor_name: selectedDoctor.name,
+                    doctor_specialty: selectedDoctor.specialty,
+                    doctor_id: selectedDoctor.doctor_id || 'LOCAL'
                 })
             })
-            .then(response => response.json())
+            .then(r => r.json())
             .then(data => {
                 if (data.success) {
-                    // Show success modal
-                    document.getElementById('success-message').textContent = 
-                        `Your appointment on ${selectedDate} at ${selectedTime} has been confirmed.`;
+                    document.getElementById('success-message').textContent =
+                        `Your appointment on ${selectedDate} at ${selectedTime} with ${selectedDoctor.name} has been confirmed.`;
                     document.getElementById('success-modal').style.display = 'flex';
-                    
-                    // Remove booked slot from available slots
-                    const index = availableSlots[selectedDate].indexOf(selectedTime);
-                    if (index > -1) {
-                        availableSlots[selectedDate].splice(index, 1);
-                    }
-                    
-                    // Reset selection
+
+                    const idx = availableSlots[selectedDate].indexOf(selectedTime);
+                    if (idx > -1) availableSlots[selectedDate].splice(idx, 1);
+
                     document.getElementById('confirmation-area').style.display = 'none';
+                    document.getElementById('doctor-selector-area').style.display = 'none';
                     document.getElementById('appointment-date').value = '';
-                    document.getElementById('time-slots-container').innerHTML = 
+                    document.getElementById('time-slots-container').innerHTML =
                         '<p class="placeholder-text">Please select a date to view available time slots</p>';
                     selectedDate = null;
                     selectedTime = null;
+                    selectedDoctor = null;
                 } else {
                     alert(data.message || 'Failed to book appointment');
                 }
             })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while booking the appointment');
+            .catch(err => {
+                console.error(err);
+                alert('An error occurred while booking.');
             });
         });
 
-        // Close modal handler
-        document.getElementById('close-modal').addEventListener('click', function() {
+        // Close modal
+        document.getElementById('close-modal').addEventListener('click', function () {
             document.getElementById('success-modal').style.display = 'none';
-            // Reload page to show updated appointments
             location.reload();
         });
 
-        // Close modal when clicking outside
-        document.getElementById('success-modal').addEventListener('click', function(e) {
+        document.getElementById('success-modal').addEventListener('click', function (e) {
             if (e.target === this) {
                 this.style.display = 'none';
                 location.reload();

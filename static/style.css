@@ -1305,3 +1305,595 @@ h4 {
 /* Made with Bob - Claude.com Design System */
 
 /* Made with Bob */
+
+/*Seerti Edit */
+
+/* ===================================
+   Doctor Selector Panel
+   =================================== */
+.doctor-selector-panel {
+    margin-top: var(--spacing-xl);
+    margin-bottom: var(--spacing-lg);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--rounded-lg);
+    overflow: hidden;
+}
+
+.doctor-selector-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: var(--spacing-md) var(--spacing-lg);
+    background-color: var(--color-surface-soft);
+    border-bottom: 1px solid var(--color-hairline);
+}
+
+.doctor-selector-label {
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-body-strong);
+    letter-spacing: 0.3px;
+}
+
+.doctor-selector-hint {
+    font-size: 12px;
+    color: var(--color-muted-soft);
+}
+
+.doctor-options-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.doctor-option-card {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md) var(--spacing-lg);
+    background-color: var(--color-canvas);
+    border-bottom: 1px solid var(--color-hairline-soft);
+    cursor: pointer;
+    transition: all 150ms ease-in-out;
+    position: relative;
+}
+
+.doctor-option-card:last-child {
+    border-bottom: none;
+}
+
+.doctor-option-card:hover {
+    background-color: var(--color-surface-soft);
+}
+
+.doctor-option-card.selected {
+    background-color: rgba(204, 120, 92, 0.06);
+    border-left: 3px solid var(--color-primary);
+}
+
+.doctor-option-avatar {
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    border-radius: var(--rounded-full);
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-body);
+    letter-spacing: 0.5px;
+}
+
+.doctor-option-card.selected .doctor-option-avatar {
+    background-color: var(--color-primary-active);
+}
+
+.doctor-option-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.doctor-option-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-ink);
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.doctor-option-specialty {
+    font-size: 13px;
+    color: var(--color-primary);
+    font-weight: 500;
+}
+
+.doctor-option-exp {
+    font-size: 12px;
+    color: var(--color-muted-soft);
+    margin-top: 2px;
+}
+
+.doctor-option-check {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--rounded-full);
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.doctor-option-card.selected .doctor-option-check {
+    display: flex;
+}
+
+.doctor-empty {
+    padding: var(--spacing-lg) var(--spacing-xl);
+    font-size: 14px;
+    color: var(--color-muted);
+    font-style: italic;
+    background-color: var(--color-canvas);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.doctor-empty-link {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-style: normal;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.doctor-empty-link:hover {
+    color: var(--color-primary-active);
+    text-decoration: underline;
+}
+
+/* Login */
+
+/* ===================================
+   Login Page
+   =================================== */
+.login-body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-canvas);
+    padding: var(--spacing-xl);
+}
+
+.login-wrapper {
+    width: 100%;
+    max-width: 460px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-lg);
+}
+
+.login-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.login-brand-name {
+    font-family: var(--font-body);
+    font-size: 26px;
+    font-weight: 500;
+    color: var(--color-ink);
+    letter-spacing: -0.5px;
+}
+
+.login-tagline {
+    font-size: 15px;
+    color: var(--color-muted);
+    margin-top: calc(-1 * var(--spacing-sm));
+    text-align: center;
+}
+
+.login-card {
+    width: 100%;
+    background-color: var(--color-surface-card);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--rounded-xl);
+    padding: var(--spacing-xxl);
+}
+
+.login-card-header {
+    text-align: center;
+    margin-bottom: var(--spacing-xl);
+}
+
+.login-card-title {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 400;
+    color: var(--color-ink);
+    margin-bottom: var(--spacing-xs);
+    letter-spacing: -0.3px;
+}
+
+.login-card-subtitle {
+    font-size: 15px;
+    color: var(--color-muted);
+}
+
+.login-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.login-option-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    width: 100%;
+    padding: var(--spacing-lg) var(--spacing-xl);
+    background-color: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--rounded-lg);
+    cursor: pointer;
+    transition: all 150ms ease-in-out;
+    text-align: left;
+    font-family: var(--font-body);
+    margin-bottom: 0;
+}
+
+.login-option-btn:hover {
+    border-color: var(--color-primary);
+    background-color: var(--color-surface-soft);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(204, 120, 92, 0.12);
+}
+
+.login-option-btn:active {
+    transform: translateY(0);
+}
+
+.login-option-icon {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: var(--rounded-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 150ms ease-in-out;
+}
+
+.login-option-doctor .login-option-icon {
+    background-color: rgba(204, 120, 92, 0.12);
+    color: var(--color-primary);
+}
+
+.login-option-doctor:hover .login-option-icon {
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+}
+
+.login-option-patient .login-option-icon {
+    background-color: rgba(93, 184, 166, 0.12);
+    color: var(--color-accent-teal);
+}
+
+.login-option-patient:hover .login-option-icon {
+    background-color: var(--color-accent-teal);
+    color: var(--color-on-primary);
+}
+
+.login-option-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.login-option-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--color-ink);
+}
+
+.login-option-desc {
+    font-size: 13px;
+    color: var(--color-muted);
+}
+
+.login-option-arrow {
+    flex-shrink: 0;
+    color: var(--color-muted-soft);
+    transition: all 150ms ease-in-out;
+}
+
+.login-option-btn:hover .login-option-arrow {
+    color: var(--color-primary);
+    transform: translateX(3px);
+}
+
+.login-divider {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin: var(--spacing-md) 0;
+    color: var(--color-muted-soft);
+    font-size: 13px;
+}
+
+.login-divider::before,
+.login-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background-color: var(--color-hairline);
+}
+
+.login-disclaimer {
+    margin-top: var(--spacing-xl);
+    font-size: 12px;
+    color: var(--color-muted-soft);
+    text-align: center;
+    font-style: italic;
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--color-hairline-soft);
+}
+
+.login-footer {
+    font-size: 12px;
+    color: var(--color-muted-soft);
+    text-align: center;
+}
+
+/* ===================================
+   Patient Info Page
+   =================================== */
+.patient-id-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--color-surface-dark);
+    border-radius: var(--rounded-lg);
+    padding: var(--spacing-md) var(--spacing-xl);
+    margin-bottom: var(--spacing-xl);
+}
+
+.patient-id-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-on-dark-soft);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.patient-id-value {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--color-primary);
+    font-family: var(--font-code);
+    letter-spacing: 1px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+}
+
+.form-hint {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--color-muted-soft);
+    margin-left: var(--spacing-sm);
+    font-style: italic;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.form-textarea {
+    height: 90px;
+    resize: vertical;
+}
+
+/* Prescription rows */
+.prescription-row {
+    background-color: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--rounded-md);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
+}
+
+.prescription-row-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-md);
+}
+
+.prescription-row-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.prescription-remove-btn {
+    background: none;
+    border: none;
+    font-size: 12px;
+    color: var(--color-error);
+    cursor: pointer;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: var(--rounded-sm);
+    transition: all 150ms ease-in-out;
+}
+
+.prescription-remove-btn:hover {
+    background-color: rgba(198, 69, 69, 0.1);
+}
+
+/* Save feedback */
+.save-feedback-success,
+.save-feedback-error {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: var(--rounded-md);
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+}
+
+.save-feedback-success {
+    background-color: rgba(93, 184, 114, 0.12);
+    color: var(--color-success);
+    border: 1px solid var(--color-success);
+}
+
+.save-feedback-error {
+    background-color: rgba(198, 69, 69, 0.10);
+    color: var(--color-error);
+    border: 1px solid var(--color-error);
+}
+
+/* Live Preview card */
+.preview-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--color-hairline);
+    margin-bottom: var(--spacing-lg);
+}
+
+.preview-avatar {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: var(--rounded-full);
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 600;
+    font-family: var(--font-body);
+}
+
+.preview-name {
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--color-ink);
+    margin-bottom: 3px;
+}
+
+.preview-id-tag {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-primary);
+    font-family: var(--font-code);
+    letter-spacing: 0.5px;
+}
+
+.preview-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.preview-stat {
+    background-color: var(--color-surface-soft);
+    border-radius: var(--rounded-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.preview-stat-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--color-muted-soft);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.preview-stat-value {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--color-ink);
+}
+
+.preview-section {
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid var(--color-hairline-soft);
+    margin-bottom: var(--spacing-sm);
+}
+
+.preview-section:last-child {
+    border-bottom: none;
+}
+
+.preview-field-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--color-muted-soft);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+}
+
+.preview-field-value {
+    font-size: 14px;
+    color: var(--color-body);
+    line-height: 1.5;
+}
+
+.preview-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+    margin-top: 4px;
+}
+
+.preview-prescription-item {
+    background-color: var(--color-surface-soft);
+    border-left: 3px solid var(--color-primary);
+    border-radius: var(--rounded-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin-bottom: var(--spacing-xs);
+}
+
+.preview-presc-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-ink);
+    margin-bottom: 2px;
+}
+
+.preview-presc-meta {
+    font-size: 12px;
+    color: var(--color-muted);
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}

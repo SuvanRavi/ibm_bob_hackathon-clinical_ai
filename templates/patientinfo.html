@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedAssistant - Patient Info</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <!-- Navigation Header -->
+   <header class="navbar">
+    <div class="container">
+        <div class="nav-brand">
+            <svg class="logo-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+                <rect x="14" y="8" width="4" height="16" fill="#2563eb"/>
+                <rect x="8" y="14" width="16" height="4" fill="#2563eb"/>
+                <circle cx="16" cy="16" r="14" stroke="#2563eb" stroke-width="2" fill="none"/>
+            </svg>
+            <h1>MedAssistant</h1>
+        </div>
+        <nav class="nav-links" id="main-nav">
+            <!-- Populated by JS based on role -->
+        </nav>
+        <button class="btn btn-secondary" id="logout-btn"
+            style="font-size:13px;height:34px;padding:0 14px;"
+            onclick="logout()">
+            Log out
+        </button>
+    </div>
+</header>
+
+<script>
+    (function () {
+        const role = localStorage.getItem('userRole');
+
+        // If no role set, send to login
+        if (!role) {
+            window.location.href = '/login';
+            return;
+        }
+
+        const currentPath = window.location.pathname;
+
+        // Doctor-only page guard — patients can't access /docprofile
+        if (role === 'patient' && currentPath === '/docprofile') {
+            window.location.href = '/';
+            return;
+        }
+
+        // Patient-only page guard — doctors land on /docprofile only
+        if (role === 'doctor' && currentPath === '/') {
+            window.location.href = '/docprofile';
+            return;
+        }
+
+        const nav = document.getElementById('main-nav');
+
+        const patientLinks = `
+            <a href="/" class="nav-link ${currentPath === '/' ? 'active' : ''}">Schedule</a>
+            <a href="/appointments" class="nav-link ${currentPath === '/appointments' ? 'active' : ''}">My Appointments</a>
+            <a href="/profile" class="nav-link ${currentPath === '/profile' ? 'active' : ''}">Profile</a>
+        `;
+
+        const doctorLinks = `
+            <a href="/docprofile" class="nav-link ${currentPath === '/docprofile' ? 'active' : ''}">Doctor Profile</a>
+            <a href="/patientinfo" class="nav-link ${currentPath === '/patientinfo' ? 'active' : ''}">Patient Info</a>
+        `;
+
+        nav.innerHTML = role === 'doctor' ? doctorLinks : patientLinks;
+    })();
+
+    function logout() {
+        localStorage.removeItem('userRole');
+        window.location.href = '/login';
+    }
+</script>
+
+<main class="main-content">
+    <div class="container">
+
+        <div class="page-header">
+            <h2>Patient Information</h2>
+            <p class="subtitle">Create or update a patient record</p>
+        </div>
+
+        <div class="content-grid">
+
+            <!-- LEFT: Form -->
+            <section class="booking-section">
+
+                <!-- Patient ID banner -->
+                <div class="patient-id-banner">
+                    <div class="patient-id-label">Auto-generated Patient ID</div>
+                    <div class="patient-id-value" id="display-patient-id">Generating...</div>
+                </div>
+
+                <!-- SECTION 1: Basic Info -->
+                <div class="card">
+                    <h3 class="card-title">Basic Information</h3>
+
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" id="patient_name" class="form-select"
+                               placeholder="e.g. Michael Schumacher">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Age</label>
+                            <input type="number" id="patient_age" class="form-select"
+                                   placeholder="e.g. 45" min="0" max="130">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Blood Group</label>
+                            <select id="blood_group" class="form-select">
+                                <option value="">Select...</option>
+                                <option>A+</option><option>A-</option>
+                                <option>B+</option><option>B-</option>
+                                <option>AB+</option><option>AB-</option>
+                                <option>O+</option><option>O-</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Allergies
+                            <span class="form-hint">comma-separated</span>
+                        </label>
+                        <input type="text" id="allergies" class="form-select"
+                               placeholder="e.g. Penicillin, Peanuts, Latex">
+                    </div>
+                </div>
+
+                <!-- SECTION 2: Clinical Details -->
+                <div class="card">
+                    <h3 class="card-title">Clinical Details</h3>
+
+                    <div class="form-group">
+                        <label class="form-label">Presenting Symptom</label>
+                        <input type="text" id="symptom" class="form-select"
+                               placeholder="e.g. Persistent cough and mild fever">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Diagnosis</label>
+                        <input type="text" id="diagnosis" class="form-select"
+                               placeholder="e.g. Upper respiratory tract infection">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Appointment Details</label>
+                        <textarea id="appointment_details" class="form-select form-textarea"
+                                  placeholder="e.g. Follow-up in 2 weeks, chest X-ray requested"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Dietary Restrictions</label>
+                        <textarea id="dietary_restrictions" class="form-select form-textarea"
+                                  placeholder="e.g. Low sodium diet, avoid alcohol"></textarea>
+                    </div>
+                </div>
+
+                <!-- SECTION 3: Prescriptions -->
+                <div class="card">
+                    <h3 class="card-title">Prescriptions</h3>
+
+                    <div id="prescription-list">
+                        <!-- Prescription rows injected here -->
+                    </div>
+
+                    <button type="button" class="btn btn-secondary" id="add-prescription-btn"
+                            style="width:100%;margin-top:8px;">
+                        + Add Medication
+                    </button>
+                </div>
+
+                <!-- Submit -->
+                <button type="button" class="btn btn-primary" id="save-btn"
+                        style="width:100%;font-size:15px;height:48px;">
+                    Save Patient Record
+                </button>
+
+                <!-- Feedback -->
+                <div id="save-feedback" style="display:none;"></div>
+
+            </section>
+
+            <!-- RIGHT: Live Preview -->
+            <aside class="reminders-section">
+                <div class="card" style="position:sticky;top:80px;">
+                    <h3 class="card-title" style="display: flex; justify-content: space-between; align-items: center; border-bottom: none; margin-bottom: 0; padding-bottom: 0;">
+    Live Preview
+    <select id="existing-patient-select" class="form-select" style="width: auto; font-size: 13px; height: 32px; padding: 0 10px;">
+        <option value="">+ New Patient (Auto ID)</option>
+    </select>
+</h3>
+<hr style="border: 0; border-top: 1px solid var(--color-hairline); margin: var(--spacing-md) 0 var(--spacing-lg) 0;">
+
+                    <!-- ID + Name -->
+                    <div class="preview-header">
+                        <div class="preview-avatar" id="preview-avatar">?</div>
+                        <div>
+                            <div class="preview-name" id="preview-name">No name entered</div>
+                            <div class="preview-id-tag" id="preview-id-tag">ID: —</div>
+                        </div>
+                    </div>
+
+                    <!-- Stats row -->
+                    <div class="preview-stats">
+                        <div class="preview-stat">
+                            <span class="preview-stat-label">Age</span>
+                            <span class="preview-stat-value" id="preview-age">—</span>
+                        </div>
+                        <div class="preview-stat">
+                            <span class="preview-stat-label">Blood</span>
+                            <span class="preview-stat-value" id="preview-blood">—</span>
+                        </div>
+                    </div>
+
+                    <!-- Fields -->
+                    <div class="preview-section">
+                        <div class="preview-field-label">Symptom</div>
+                        <div class="preview-field-value" id="preview-symptom">—</div>
+                    </div>
+                    <div class="preview-section">
+                        <div class="preview-field-label">Diagnosis</div>
+                        <div class="preview-field-value" id="preview-diagnosis">—</div>
+                    </div>
+                    <div class="preview-section">
+                        <div class="preview-field-label">Allergies</div>
+                        <div id="preview-allergies" class="preview-tags">—</div>
+                    </div>
+                    <div class="preview-section">
+                        <div class="preview-field-label">Appointment Details</div>
+                        <div class="preview-field-value" id="preview-appointment">—</div>
+                    </div>
+                    <div class="preview-section">
+                        <div class="preview-field-label">Dietary Restrictions</div>
+                        <div class="preview-field-value" id="preview-dietary">—</div>
+                    </div>
+                    <div class="preview-section">
+                        <div class="preview-field-label">Prescriptions</div>
+                        <div id="preview-prescriptions">
+                            <span style="color:var(--color-muted-soft);font-style:italic;font-size:13px;">None added</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+        </div>
+    </div>
+</main>
+
+<script>
+// ─── Auto-generate Patient ID ───────────────────────────────────────────
+async function generatePatientId() {
+    try {
+        const res = await fetch('/api/next-patient-id');
+        const data = await res.json();
+        return data.patient_id;
+    } catch {
+        // Fallback: generate locally
+        const rand = Math.floor(Math.random() * 900) + 100;
+        return `P${rand}`;
+    }
+}
+
+let currentPatientId = '';
+
+(async () => {
+    currentPatientId = await generatePatientId();
+    document.getElementById('display-patient-id').textContent = currentPatientId;
+    document.getElementById('preview-id-tag').textContent = `ID: ${currentPatientId}`;
+})();
+
+// ─── Prescription rows ───────────────────────────────────────────────────
+let prescriptionCount = 0;
+
+function addPrescriptionRow(data = {}) {
+    prescriptionCount++;
+    const idx = prescriptionCount;
+    const row = document.createElement('div');
+    row.className = 'prescription-row';
+    row.dataset.idx = idx;
+
+    row.innerHTML = `
+        <div class="prescription-row-header">
+            <span class="prescription-row-title">Medication ${idx}</span>
+            <button type="button" class="prescription-remove-btn" onclick="removePrescription(${idx})">
+                ✕ Remove
+            </button>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Medication Name</label>
+                <input type="text" class="form-select presc-medication"
+                       placeholder="e.g. Amoxicillin 500mg"
+                       value="${data.medication || ''}" oninput="updatePreview()">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Dosage</label>
+                <input type="text" class="form-select presc-dosage"
+                       placeholder="e.g. Twice daily"
+                       value="${data.dosage || ''}" oninput="updatePreview()">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Duration</label>
+                <input type="text" class="form-select presc-duration"
+                       placeholder="e.g. 7 days"
+                       value="${data.duration || ''}" oninput="updatePreview()">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Notes</label>
+                <input type="text" class="form-select presc-notes"
+                       placeholder="e.g. Take with food"
+                       value="${data.notes || ''}" oninput="updatePreview()">
+            </div>
+        </div>
+    `;
+
+    document.getElementById('prescription-list').appendChild(row);
+    updatePreview();
+}
+
+function removePrescription(idx) {
+    const row = document.querySelector(`.prescription-row[data-idx="${idx}"]`);
+    if (row) row.remove();
+    updatePreview();
+}
+
+document.getElementById('add-prescription-btn').addEventListener('click', () => addPrescriptionRow());
+
+// Start with one empty row
+addPrescriptionRow();
+
+// ─── Live Preview ────────────────────────────────────────────────────────
+function getPrescriptions() {
+    const rows = document.querySelectorAll('.prescription-row');
+    const result = [];
+    rows.forEach(row => {
+        const med  = row.querySelector('.presc-medication').value.trim();
+        const dos  = row.querySelector('.presc-dosage').value.trim();
+        const dur  = row.querySelector('.presc-duration').value.trim();
+        const note = row.querySelector('.presc-notes').value.trim();
+        if (med) result.push({ medication: med, dosage: dos, duration: dur, notes: note });
+    });
+    return result;
+}
+
+function updatePreview() {
+    const name      = document.getElementById('patient_name').value.trim();
+    const age       = document.getElementById('patient_age').value.trim();
+    const blood     = document.getElementById('blood_group').value;
+    const allergies = document.getElementById('allergies').value.trim();
+    const symptom   = document.getElementById('symptom').value.trim();
+    const diagnosis = document.getElementById('diagnosis').value.trim();
+    const apptDet   = document.getElementById('appointment_details').value.trim();
+    const dietary   = document.getElementById('dietary_restrictions').value.trim();
+
+    // Avatar initials
+    const initials = name
+        ? name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('')
+        : '?';
+    document.getElementById('preview-avatar').textContent   = initials;
+    document.getElementById('preview-name').textContent     = name || 'No name entered';
+    document.getElementById('preview-age').textContent      = age  || '—';
+    document.getElementById('preview-blood').textContent    = blood || '—';
+    document.getElementById('preview-symptom').textContent  = symptom   || '—';
+    document.getElementById('preview-diagnosis').textContent = diagnosis || '—';
+    document.getElementById('preview-appointment').textContent = apptDet || '—';
+    document.getElementById('preview-dietary').textContent  = dietary   || '—';
+
+    // Allergy tags
+    const allergyEl = document.getElementById('preview-allergies');
+    if (allergies) {
+        allergyEl.innerHTML = allergies.split(',')
+            .map(a => a.trim()).filter(Boolean)
+            .map(a => `<span class="tag-allergy">${a}</span>`)
+            .join('');
+    } else {
+        allergyEl.innerHTML = '<span style="color:var(--color-muted-soft);font-style:italic;font-size:13px;">None listed</span>';
+    }
+
+    // Prescriptions preview
+    const prescriptions = getPrescriptions();
+    const prescEl = document.getElementById('preview-prescriptions');
+    if (prescriptions.length === 0) {
+        prescEl.innerHTML = '<span style="color:var(--color-muted-soft);font-style:italic;font-size:13px;">None added</span>';
+    } else {
+        prescEl.innerHTML = prescriptions.map(p => `
+            <div class="preview-prescription-item">
+                <div class="preview-presc-name">${p.medication}</div>
+                <div class="preview-presc-meta">${p.dosage}${p.duration ? ' · ' + p.duration : ''}${p.notes ? ' · ' + p.notes : ''}</div>
+            </div>
+        `).join('');
+    }
+}
+
+// Attach listeners to static fields
+['patient_name','patient_age','blood_group','allergies',
+ 'symptom','diagnosis','appointment_details','dietary_restrictions']
+.forEach(id => {
+    document.getElementById(id).addEventListener('input', updatePreview);
+    document.getElementById(id).addEventListener('change', updatePreview);
+});
+
+// ─── Save ────────────────────────────────────────────────────────────────
+document.getElementById('save-btn').addEventListener('click', async () => {
+    const name = document.getElementById('patient_name').value.trim();
+    if (!name) {
+        showFeedback('Please enter a patient name.', 'error');
+        return;
+    }
+
+    const payload = {
+        patient_id:           currentPatientId,
+        patient_name:         name,
+        patient_age:          parseInt(document.getElementById('patient_age').value) || 0,
+        blood_group:          document.getElementById('blood_group').value,
+        allergies:            document.getElementById('allergies').value
+                                .split(',').map(a => a.trim()).filter(Boolean),
+        symptom:              document.getElementById('symptom').value.trim(),
+        diagnosis:            document.getElementById('diagnosis').value.trim(),
+        appointment_details:  document.getElementById('appointment_details').value.trim(),
+        dietary_restrictions: document.getElementById('dietary_restrictions').value.trim(),
+        prescription:         getPrescriptions()
+    };
+
+    try {
+        const res = await fetch('/api/patients', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            showFeedback(`Patient ${currentPatientId} saved successfully.`, 'success');
+
+            // Generate a new ID for the next patient
+            currentPatientId = await generatePatientId();
+            document.getElementById('display-patient-id').textContent = currentPatientId;
+            document.getElementById('preview-id-tag').textContent = `ID: ${currentPatientId}`;
+
+            // Reset form
+            ['patient_name','patient_age','blood_group','allergies',
+             'symptom','diagnosis','appointment_details','dietary_restrictions']
+            .forEach(id => {
+                const el = document.getElementById(id);
+                el.value = '';
+            });
+            document.getElementById('prescription-list').innerHTML = '';
+            prescriptionCount = 0;
+            addPrescriptionRow();
+            updatePreview();
+        } else {
+            showFeedback(data.message || 'Failed to save.', 'error');
+        }
+    } catch (err) {
+        showFeedback('Network error. Please try again.', 'error');
+    }
+});
+
+function showFeedback(msg, type) {
+    const el = document.getElementById('save-feedback');
+    el.textContent = msg;
+    el.style.display = 'block';
+    el.className = type === 'success' ? 'save-feedback-success' : 'save-feedback-error';
+    setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
+
+
+// ─── Load Existing Patients Data ─────────────────────────────────────────
+let allPatientsData = {};
+
+async function loadExistingPatients() {
+    try {
+        const res = await fetch('/api/all-patients');
+        const data = await res.json();
+        if (data.success) {
+            allPatientsData = data.patients;
+            const select = document.getElementById('existing-patient-select');
+            
+            // Populate dropdown
+            for (const pid in allPatientsData) {
+                const p = allPatientsData[pid];
+                const option = document.createElement('option');
+                option.value = pid;
+                option.textContent = `${pid} - ${p.patient_name || 'Unknown'}`;
+                select.appendChild(option);
+            }
+        }
+    } catch (err) {
+        console.error("Failed to load existing patients", err);
+    }
+}
+
+// ─── Handle Patient Selection ────────────────────────────────────────────
+document.getElementById('existing-patient-select').addEventListener('change', async function(e) {
+    const pid = e.target.value;
+    
+    // If "+ New Patient" is selected
+    if (!pid) {
+        currentPatientId = await generatePatientId();
+        document.getElementById('display-patient-id').textContent = currentPatientId;
+        document.getElementById('preview-id-tag').textContent = `ID: ${currentPatientId}`;
+        
+        // Clear all form fields
+        ['patient_name','patient_age','blood_group','allergies',
+         'symptom','diagnosis','appointment_details','dietary_restrictions']
+        .forEach(id => document.getElementById(id).value = '');
+        
+        // Reset prescriptions
+        document.getElementById('prescription-list').innerHTML = '';
+        prescriptionCount = 0;
+        addPrescriptionRow();
+        updatePreview();
+        return;
+    }
+
+    // If an existing patient is selected, populate data
+    const p = allPatientsData[pid];
+    currentPatientId = pid;
+    document.getElementById('display-patient-id').textContent = currentPatientId;
+    document.getElementById('preview-id-tag').textContent = `ID: ${currentPatientId}`;
+
+    document.getElementById('patient_name').value = p.patient_name || '';
+    document.getElementById('patient_age').value = p.patient_age || '';
+    document.getElementById('blood_group').value = p.blood_group || '';
+    
+    // Convert allergies array to comma-separated string if needed
+    let allergiesText = p.allergies || '';
+    if (Array.isArray(p.allergies)) {
+        allergiesText = p.allergies.join(', ');
+    }
+    document.getElementById('allergies').value = allergiesText;
+    
+    document.getElementById('symptom').value = p.symptom || '';
+    document.getElementById('diagnosis').value = p.diagnosis || '';
+    document.getElementById('appointment_details').value = p.appointment_details || '';
+    document.getElementById('dietary_restrictions').value = p.dietary_restrictions || '';
+
+    // Repopulate prescriptions
+    document.getElementById('prescription-list').innerHTML = '';
+    prescriptionCount = 0;
+    if (p.prescription && p.prescription.length > 0) {
+        p.prescription.forEach(med => addPrescriptionRow(med));
+    } else {
+        addPrescriptionRow();
+    }
+
+    updatePreview();
+});
+
+// Initialize the patient list on page load
+loadExistingPatients();
+</script>
+
+</body>
+</html>

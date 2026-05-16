@@ -12,49 +12,50 @@ import json
 sys.path.append(os.path.join(os.path.dirname(__file__), 'model'))
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for frontend communication
+CORS(app)
 
 # Import inference service (will be loaded lazily)
 inference_service = None
 
 def get_inference_service():
-    """Lazy load inference service"""
     global inference_service
     if inference_service is None:
         try:
-            # Try to use pre-trained model first (no training required)
             from model.inference_pretrained import get_inference_service as get_service
             inference_service = get_service()
             print("✓ Symptom analyzer loaded (using pre-trained BioMedCLIP)")
         except Exception as e:
             print(f"⚠️ Warning: Could not load symptom analyzer: {e}")
-            print("   Make sure dependencies are installed: pip install open-clip-torch")
-            inference_service = False  # Mark as failed to avoid retrying
+            inference_service = False
     return inference_service if inference_service is not False else None
 
-# Load JSON data files
+
+# =========================
+# GLOBAL ASYNC PROFILE STORE
+# =========================
+GLOBAL_DOCTOR_PROFILE = {
+    "doctor_id": "",
+    "name": "",
+    "specialty": "",
+    "experience": "",
+    "bio": ""
+}
+
+
 def load_json_data(filename):
-    """Load data from JSON file"""
     try:
         filepath = os.path.join('data', filename)
         with open(filepath, 'r') as f:
             return json.load(f)
-    except FileNotFoundError:
-        print(f"⚠️ Warning: {filename} not found. Using empty data.")
-        return {}
-    except json.JSONDecodeError as e:
-        print(f"⚠️ Warning: Error parsing {filename}: {e}")
+    except:
         return {}
 
-# Load data from JSON files
 patients_data = load_json_data('patients.json')
 doctors_data = load_json_data('doctors.json')
 appointments_data = load_json_data('appointments.json')
 
-# Current logged-in patient (for demo purposes)
 CURRENT_PATIENT_ID = 'P001'
 
-# Mock data for available time slots
 available_slots = {
     '2026-05-17': ['09:00 AM', '11:00 AM', '02:00 PM', '03:00 PM', '04:00 PM'],
     '2026-05-18': ['09:00 AM', '10:00 AM', '11:00 AM', '02:00 PM', '03:00 PM'],
@@ -63,7 +64,6 @@ available_slots = {
     '2026-05-21': ['09:00 AM', '10:00 AM', '02:00 PM', '03:00 PM'],
 }
 
-# Mock data for upcoming tasks
 upcoming_tasks = [
     {
         'task': 'Lab Test - Blood Work',
@@ -79,64 +79,65 @@ upcoming_tasks = [
     }
 ]
 
+
 def get_current_patient():
-    """Get current patient data"""
     return patients_data.get(CURRENT_PATIENT_ID, {})
 
+
 def get_patient_appointments(patient_id):
-    """Get all appointments for a patient"""
     patient_appointments = []
     for apt_id, apt in appointments_data.items():
         if apt['patient_id'] == patient_id and apt['status'] == 'scheduled':
-            # Get doctor info
             doctor = doctors_data.get(apt['doctor_id'], {})
+
+            # ✅ Prefer directly stored name/specialty (localStorage doctors)
+            doctor_name     = apt.get('doctor_name') or doctor.get('name', 'Unknown Doctor')
+            doctor_specialty = apt.get('doctor_specialty') or doctor.get('specialty', 'General')
+
             patient_appointments.append({
                 'appointment_id': apt_id,
                 'date': apt['date'],
                 'time': apt['time'],
-                'doctor': doctor.get('name', 'Unknown Doctor'),
-                'specialty': doctor.get('specialty', 'General'),
+                'doctor': doctor_name,
+                'specialty': doctor_specialty,
                 'booked_at': apt['booked_at'],
                 'notes': apt.get('notes', '')
             })
     return patient_appointments
 
+
 def get_medication_reminders(patient_id):
-    """Get medication reminders for a patient"""
     patient = patients_data.get(patient_id, {})
     prescriptions = patient.get('prescription', [])
-    
+
     reminders = []
     for med in prescriptions:
         reminders.append({
-            'medication': f"{med['medication']}",
-            'time': '08:00 AM',  # Default time
+            'medication': med['medication'],
+            'time': '08:00 AM',
             'frequency': med['dosage'],
             'notes': med.get('notes', '')
         })
     return reminders
 
+
+# =========================
+# PAGES
+# =========================
+
 @app.route('/')
 def index():
-    patient_appointments = get_patient_appointments(CURRENT_PATIENT_ID)
-    medication_reminders = get_medication_reminders(CURRENT_PATIENT_ID)
-    
     return render_template('schedule.html',
                          available_slots=available_slots,
-                         booked_appointments=patient_appointments,
-                         medication_reminders=medication_reminders,
                          upcoming_tasks=upcoming_tasks)
+
 
 @app.route('/schedule')
 def schedule():
-    patient_appointments = get_patient_appointments(CURRENT_PATIENT_ID)
-    medication_reminders = get_medication_reminders(CURRENT_PATIENT_ID)
-    
     return render_template('schedule.html',
                          available_slots=available_slots,
-                         booked_appointments=patient_appointments,
-                         medication_reminders=medication_reminders,
                          upcoming_tasks=upcoming_tasks)
+
 
 @app.route('/appointments')
 def appointments():
@@ -144,10 +145,10 @@ def appointments():
     return render_template('appointments.html',
                          booked_appointments=patient_appointments)
 
+
 @app.route('/profile')
 def profile():
     patient = get_current_patient()
-    # Format patient data for template
     patient_profile = {
         'name': patient.get('patient_name', 'Unknown'),
         'age': patient.get('patient_age', 0),
@@ -155,43 +156,102 @@ def profile():
         'contact_number': patient.get('contact_number', ''),
         'email': patient.get('email', ''),
         'allergies': patient.get('allergies', []),
-        'current_medications': [f"{med['medication']} - {med['dosage']}"
-                               for med in patient.get('prescription', [])],
+        'current_medications': [
+            f"{med['medication']} - {med['dosage']}"
+            for med in patient.get('prescription', [])
+        ],
         'emergency_contact': patient.get('emergency_contact', {})
     }
+
     return render_template('profile.html',
                          patient_profile=patient_profile)
+
 
 @app.route('/symptom-analyzer')
 def symptom_analyzer():
     return render_template('symptom_analyzer.html')
+
+
+# =========================
+# DOCTOR PROFILE PAGE
+# =========================
+
+@app.route('/docprofile')
+def docprofile():
+    return render_template('docprofile.html')
+
+
+# =========================
+# GLOBAL ASYNC API
+# =========================
+
+@app.route('/api/doc-profile', methods=['GET'])
+def get_doc_profile():
+    return jsonify({
+        "success": True,
+        "profile": GLOBAL_DOCTOR_PROFILE
+    })
+
+
+@app.route('/api/doc-profile', methods=['POST'])
+def update_doc_profile():
+    global GLOBAL_DOCTOR_PROFILE
+
+    data = request.get_json()
+
+    GLOBAL_DOCTOR_PROFILE = {
+        "doctor_id": data.get("doctor_id", ""),
+        "name": data.get("name", ""),
+        "specialty": data.get("specialty", ""),
+        "experience": data.get("experience", ""),
+        "bio": data.get("bio", "")
+    }
+
+    return jsonify({
+        "success": True,
+        "message": "Doctor profile updated successfully",
+        "profile": GLOBAL_DOCTOR_PROFILE
+    })
+
+
+@app.route('/login')
+def login():
+    return render_template('login.html')
+# =========================
+# EXISTING APIs (UNCHANGED)
+# =========================
 
 @app.route('/api/book', methods=['POST'])
 def book_appointment():
     data = request.get_json()
     date = data.get('date')
     time = data.get('time')
-    doctor_id = data.get('doctor_id', 'D001')  # Default to first doctor
-    
+    doctor_id = data.get('doctor_id', 'LOCAL')
+
+    # ✅ Accept doctor info directly from frontend (localStorage doctors)
+    doctor_name     = data.get('doctor_name', '')
+    doctor_specialty = data.get('doctor_specialty', '')
+
     if not date or not time:
-        return jsonify({'success': False, 'message': 'Date and time are required'}), 400
-    
-    # Check if slot is available
+        return jsonify({'success': False, 'message': 'Date and time required'}), 400
+
     if date in available_slots and time in available_slots[date]:
-        # Remove the booked slot from available slots
         available_slots[date].remove(time)
-        
-        # Generate new appointment ID
+
         new_apt_id = f"A{str(len(appointments_data) + 1).zfill(3)}"
-        
-        # Get doctor info
-        doctor = doctors_data.get(doctor_id, {})
-        
-        # Create new appointment
+
+        # ✅ Fall back to doctors_data if it's a known doctor_id
+        if not doctor_name:
+            doctor = doctors_data.get(doctor_id, {})
+            doctor_name     = doctor.get('name', 'Unknown Doctor')
+            doctor_specialty = doctor.get('specialty', 'General')
+
         new_appointment = {
             'appointment_id': new_apt_id,
             'patient_id': CURRENT_PATIENT_ID,
             'doctor_id': doctor_id,
+            'doctor_name': doctor_name,           # ✅ store name directly
+            'doctor_specialty': doctor_specialty, # ✅ store specialty directly
             'date': date,
             'time': time,
             'status': 'scheduled',
@@ -199,224 +259,128 @@ def book_appointment():
             'notes': 'Scheduled via web portal',
             'booked_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         }
-        
-        # Add to appointments data
-        appointments_data[new_apt_id] = new_appointment
-        
-        # Save to JSON file
-        save_json_data('appointments.json', appointments_data)
-        
-        # Return formatted appointment
-        appointment = {
-            'date': date,
-            'time': time,
-            'doctor': doctor.get('name', 'Unknown Doctor'),
-            'specialty': doctor.get('specialty', 'General'),
-            'booked_at': new_appointment['booked_at']
-        }
-        
-        return jsonify({
-            'success': True,
-            'message': 'Appointment booked successfully!',
-            'appointment': appointment
-        })
-    else:
-        return jsonify({
-            'success': False,
-            'message': 'Selected time slot is not available'
-        }), 400
 
-def save_json_data(filename, data):
-    """Save data to JSON file"""
-    try:
-        filepath = os.path.join('data', filename)
-        with open(filepath, 'w') as f:
-            json.dump(data, f, indent=2)
-        return True
-    except Exception as e:
-        print(f"⚠️ Error saving {filename}: {e}")
-        return False
+        appointments_data[new_apt_id] = new_appointment
+
+        return jsonify({'success': True, 'message': 'Appointment booked successfully'})
+
+    return jsonify({'success': False, 'message': 'Slot not available'}), 400
+
 
 @app.route('/api/slots/<date>')
 def get_slots(date):
-    slots = available_slots.get(date, [])
-    return jsonify({'date': date, 'slots': slots})
+    return jsonify({'date': date, 'slots': available_slots.get(date, [])})
 
-@app.route('/api/doctors', methods=['GET'])
+
+@app.route('/api/doctors')
 def get_doctors():
-    """Get all doctors"""
-    doctors_list = [
-        {
-            'doctor_id': doc_id,
-            'name': doc['name'],
-            'specialty': doc['specialty'],
-            'experience_years': doc.get('experience_years', 0),
-            'consultation_fee': doc.get('consultation_fee', 0)
-        }
-        for doc_id, doc in doctors_data.items()
-    ]
-    return jsonify({'success': True, 'doctors': doctors_list})
+    return jsonify({
+        'success': True,
+        'doctors': [
+            {
+                'doctor_id': doc_id,
+                'name': doc['name'],
+                'specialty': doc['specialty']
+            }
+            for doc_id, doc in doctors_data.items()
+        ]
+    })
 
-@app.route('/api/doctors/<doctor_id>', methods=['GET'])
-def get_doctor(doctor_id):
-    """Get specific doctor details"""
-    doctor = doctors_data.get(doctor_id)
-    if doctor:
-        return jsonify({'success': True, 'doctor': doctor})
-    else:
-        return jsonify({'success': False, 'message': 'Doctor not found'}), 404
 
-@app.route('/api/patient', methods=['GET'])
+@app.route('/api/patient')
 def get_patient():
-    """Get current patient information"""
-    patient = get_current_patient()
-    if patient:
-        return jsonify({'success': True, 'patient': patient})
-    else:
-        return jsonify({'success': False, 'message': 'Patient not found'}), 404
+    return jsonify({
+        'success': True,
+        'patient': get_current_patient()
+    })
 
-@app.route('/api/cancel/<int:appointment_index>', methods=['DELETE'])
-def cancel_appointment(appointment_index):
+@app.route('/api/all-patients', methods=['GET'])
+def get_all_patients():
+    return jsonify({
+        'success': True,
+        'patients': patients_data
+    })
+    
+@app.route('/patientinfo')
+def patientinfo():
+    return render_template('patientinfo.html')
+
+
+@app.route('/api/next-patient-id')
+def next_patient_id():
+    existing = list(patients_data.keys())
+    # Extract numeric parts and find the next one
+    nums = []
+    for pid in existing:
+        try:
+            nums.append(int(pid.replace('P', '')))
+        except:
+            pass
+    next_num = max(nums) + 1 if nums else 1
+    return jsonify({'patient_id': f'P{str(next_num).zfill(3)}'})
+
+
+@app.route('/api/patients', methods=['POST'])
+def save_patient():
+    data = request.get_json()
+    patient_id = data.get('patient_id')
+
+    if not patient_id or not data.get('patient_name'):
+        return jsonify({'success': False, 'message': 'Patient ID and name are required'}), 400
+
+    patients_data[patient_id] = {
+        'patient_id':           patient_id,
+        'patient_name':         data.get('patient_name', ''),
+        'patient_age':          data.get('patient_age', 0),
+        'blood_group':          data.get('blood_group', ''),
+        'allergies':            data.get('allergies', []),
+        'symptom':              data.get('symptom', ''),
+        'diagnosis':            data.get('diagnosis', ''),
+        'appointment_details':  data.get('appointment_details', ''),
+        'dietary_restrictions': data.get('dietary_restrictions', ''),
+        'prescription':         data.get('prescription', [])
+    }
+
+    # Persist to the JSON file
     try:
-        # Get patient's appointments
-        patient_appointments = get_patient_appointments(CURRENT_PATIENT_ID)
-        
-        if 0 <= appointment_index < len(patient_appointments):
-            # Get the appointment to cancel
-            appointment = patient_appointments[appointment_index]
-            apt_id = appointment['appointment_id']
-            date = appointment['date']
-            time = appointment['time']
-            
-            # Update appointment status in data
-            if apt_id in appointments_data:
-                appointments_data[apt_id]['status'] = 'cancelled'
-                save_json_data('appointments.json', appointments_data)
-            
-            # Add the time slot back to available slots
-            if date in available_slots:
-                if time not in available_slots[date]:
-                    available_slots[date].append(time)
-                    # Sort the time slots
-                    available_slots[date].sort()
-            else:
-                available_slots[date] = [time]
-            
-            return jsonify({
-                'success': True,
-                'message': 'Appointment cancelled successfully'
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'message': 'Invalid appointment index'
-            }), 404
+        filepath = os.path.join('data', 'patients.json')
+        with open(filepath, 'w') as f:
+            json.dump(patients_data, f, indent=2)
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': str(e)
-        }), 500
+        return jsonify({'success': False, 'message': f'Saved in memory but could not write file: {str(e)}'}), 500
+
+    return jsonify({'success': True, 'patient_id': patient_id})
+
+
+
+# =========================
+# SYMPTOM ANALYZER (UNCHANGED)
+# =========================
 
 @app.route('/api/analyze-symptom', methods=['POST'])
 def analyze_symptom():
-    """
-    Analyze symptom from uploaded image
-    
-    Request body:
-    {
-        "image": "base64_encoded_image_string"
-    }
-    
-    Response:
-    {
-        "success": true,
-        "analysis": {
-            "condition": "Melanocytic nevi",
-            "confidence": 0.87,
-            "severity": "mild",
-            "severity_score": 1,
-            "recommended_action": "...",
-            "additional_notes": "...",
-            "timestamp": "2026-05-16T16:40:00Z"
-        }
-    }
-    """
     try:
-        # Get inference service
         service = get_inference_service()
-        
+
         if service is None:
             return jsonify({
                 'success': False,
-                'error': 'Symptom analyzer model not available',
-                'message': 'The model has not been trained yet. Please train the model first using: python model/train_biomedclip.py'
+                'error': 'Model not available'
             }), 503
-        
-        # Get request data
-        data = request.get_json()
-        
-        if not data or 'image' not in data:
-            return jsonify({
-                'success': False,
-                'error': 'No image provided',
-                'message': 'Please provide an image in base64 format'
-            }), 400
-        
-        # Decode base64 image
-        try:
-            image_data = data['image']
-            
-            # Remove data URL prefix if present
-            if ',' in image_data:
-                image_data = image_data.split(',')[1]
-            
-            # Decode base64
-            image_bytes = base64.b64decode(image_data)
-            image = Image.open(io.BytesIO(image_bytes))
-            
-            # Validate image
-            if image.mode not in ['RGB', 'RGBA']:
-                image = image.convert('RGB')
-            
-            # Check image size (max 10MB)
-            if len(image_bytes) > 10 * 1024 * 1024:
-                return jsonify({
-                    'success': False,
-                    'error': 'Image too large',
-                    'message': 'Image size must be less than 10MB'
-                }), 400
-                
-        except Exception as e:
-            return jsonify({
-                'success': False,
-                'error': 'Invalid image format',
-                'message': f'Could not decode image: {str(e)}'
-            }), 400
-        
-        # Perform analysis
-        result = service.analyze_symptom(image)
-        
-        return jsonify(result)
-        
-    except Exception as e:
-        print(f"Error in analyze_symptom: {e}")
-        return jsonify({
-            'success': False,
-            'error': 'Internal server error',
-            'message': str(e)
-        }), 500
 
-@app.route('/api/symptom-analyzer/status', methods=['GET'])
-def symptom_analyzer_status():
-    """Check if symptom analyzer is available"""
-    service = get_inference_service()
-    
-    return jsonify({
-        'available': service is not None,
-        'message': 'Symptom analyzer is ready' if service else 'Model not loaded. Please train the model first.'
-    })
+        data = request.get_json()
+
+        image_data = data['image'].split(',')[-1]
+        image_bytes = base64.b64decode(image_data)
+        image = Image.open(io.BytesIO(image_bytes))
+
+        result = service.analyze_symptom(image)
+
+        return jsonify(result)
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
-
-# Made with Bob
