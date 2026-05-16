@@ -1,14 +1,30 @@
 from flask import Flask, render_template, request, jsonify
 from datetime import datetime, timedelta
-import requests
-import json
-import os
 
 app = Flask(__name__)
 
-# Hugging Face API Configuration
-HF_API_TOKEN = os.environ.get('HF_API_TOKEN')  # Replace with your actual token
-API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
+# Initialize Local LLM (TinyLlama - smaller, faster, more reliable)
+print("Loading TinyLlama model... This may take a few minutes on first run.")
+pipe = None
+try:
+    import torch
+    from transformers import pipeline
+    
+    # Use TinyLlama - much more reliable and faster for hackathons
+    pipe = pipeline(
+        "text-generation",
+        model="TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+        device_map="auto"
+    )
+    print("✓ TinyLlama model loaded successfully!")
+    print("  Model size: ~1.1B parameters (~2GB)")
+except ImportError as e:
+    print(f"⚠️ Warning: Required packages not installed: {e}")
+    print("   Please run: pip install torch transformers accelerate")
+except Exception as e:
+    print(f"⚠️ Warning: Could not load TinyLlama model: {e}")
+    print(f"   Error type: {type(e).__name__}")
+    print("   The app will continue with built-in knowledge base responses.")
 
 # Mock data for available time slots
 available_slots = {
@@ -182,79 +198,60 @@ DANGEROUS_RESPONSE_KEYWORDS = [
     'go to hospital'
 ]
 
-def query_ai_model(payload):
+def query_ai_model(prompt):
     """
-    Query the Hugging Face BioMistral-7B model
+    Query the local TinyLlama model
     Returns the AI-generated text or an error message
     """
-    headers = {
-        "Authorization": f"Bearer {HF_API_TOKEN}",
-        "Content-Type": "application/json"
-    }
+    if pipe is None:
+        return {
+            'error': True,
+            'message': "Local AI model is not available. Please ensure transformers and torch are installed."
+        }
     
     try:
-        response = requests.post(API_URL, headers=headers, json=payload, timeout=30)
+        # Construct prompt in TinyLlama chat format
+        formatted_prompt = f"<|system|>\nYou are a helpful medical assistant.</s>\n<|user|>\n{prompt}</s>\n<|assistant|>\n"
         
-        # Handle model loading time
-        if response.status_code == 503:
-            error_data = response.json()
-            if 'estimated_time' in error_data:
+        # Generate response
+        outputs = pipe(
+            formatted_prompt,
+            max_new_tokens=200,
+            temperature=0.7,
+            top_p=0.9,
+            do_sample=True,
+            return_full_text=False,
+            pad_token_id=pipe.tokenizer.eos_token_id
+        )
+        
+        # Extract generated text
+        if outputs and len(outputs) > 0:
+            generated_text = outputs[0]['generated_text']
+            
+            # Clean up the response (remove special tokens and extra whitespace)
+            generated_text = generated_text.replace('</s>', '').replace('<|assistant|>', '').strip()
+            
+            # If response is too short or empty, return error
+            if len(generated_text) < 10:
                 return {
                     'error': True,
-                    'message': f"Model is loading. Please wait approximately {error_data['estimated_time']:.0f} seconds and try again."
+                    'message': "Model generated an incomplete response."
                 }
+            
             return {
-                'error': True,
-                'message': "Model is currently loading. Please try again in a moment."
+                'error': False,
+                'text': generated_text
             }
         
-        # Handle rate limiting
-        if response.status_code == 429:
-            return {
-                'error': True,
-                'message': "Rate limit exceeded. Please wait a moment before trying again."
-            }
-        
-        # Handle authentication errors
-        if response.status_code == 401:
-            return {
-                'error': True,
-                'message': "API authentication failed. Please check the API token configuration."
-            }
-        
-        # Handle successful response
-        if response.status_code == 200:
-            result = response.json()
-            if isinstance(result, list) and len(result) > 0:
-                return {
-                    'error': False,
-                    'text': result[0].get('generated_text', '')
-                }
-            return {
-                'error': True,
-                'message': "Unexpected response format from AI model."
-            }
-        
-        # Handle other errors
         return {
             'error': True,
-            'message': f"API request failed with status code {response.status_code}"
+            'message': "Model did not generate a response."
         }
         
-    except requests.exceptions.Timeout:
-        return {
-            'error': True,
-            'message': "Request timed out. The AI model may be busy. Please try again."
-        }
-    except requests.exceptions.RequestException as e:
-        return {
-            'error': True,
-            'message': f"Network error: {str(e)}"
-        }
     except Exception as e:
         return {
             'error': True,
-            'message': f"Unexpected error: {str(e)}"
+            'message': f"Error generating response: {str(e)}"
         }
 
 def check_response_safety(ai_response):
@@ -471,27 +468,16 @@ IMPORTANT RULES:
 
 Patient Question: {user_message}
 
-Answer:"""
+Provide a helpful, concise answer:"""
 
-        # Query the AI model
-        payload = {
-            "inputs": system_prompt,
-            "parameters": {
-                "max_new_tokens": 250,
-                "temperature": 0.7,
-                "top_p": 0.9,
-                "do_sample": True,
-                "return_full_text": False
-            }
-        }
+        # Query the local AI model
+        ai_result = query_ai_model(system_prompt)
         
-        ai_result = query_ai_model(payload)
-        
-        # Handle API errors
+        # Handle model errors
         if ai_result.get('error'):
             return jsonify({
                 'success': True,
-                'response': f"⚠️ AI Model Unavailable: {ai_result['message']}\n\nIn the meantime, I can help with:\n• Medication information from your records\n• Dietary advice for {diagnosis}\n• General symptom information\n\nPlease try your question again, or contact {doctor_name} directly.",
+                'response': f"⚠️ Local AI Model Unavailable: {ai_result['message']}\n\nIn the meantime, I can help with:\n• Medication information from your records\n• Dietary advice for {diagnosis}\n• General symptom information\n\nPlease try your question again, or contact {doctor_name} directly.",
                 'type': 'error',
                 'escalate': False
             })
@@ -511,7 +497,7 @@ Answer:"""
             })
         
         # Add disclaimer to AI response
-        final_response = f"{ai_text}\n\n---\n*Generated by AI. Always consult {doctor_name} for medical advice.*"
+        final_response = f"{ai_text}\n\n---\n*Generated by Local AI. Always consult {doctor_name} for medical advice.*"
         
         return jsonify({
             'success': True,
