@@ -1,0 +1,1307 @@
+/* ===================================
+   MedAssistant - Claude.com Design System
+   Warm Editorial Medical Dashboard
+   =================================== */
+
+/* ===================================
+   CSS Variables - Claude.com Palette
+   =================================== */
+:root {
+    /* Brand & Accent Colors */
+    --color-primary: #cc785c;
+    --color-primary-active: #a9583e;
+    --color-primary-disabled: #e6dfd8;
+    --color-accent-teal: #5db8a6;
+    --color-accent-amber: #e8a55a;
+    
+    /* Surface Colors */
+    --color-canvas: #faf9f5;
+    --color-surface-soft: #f5f0e8;
+    --color-surface-card: #efe9de;
+    --color-surface-cream-strong: #e8e0d2;
+    --color-surface-dark: #181715;
+    --color-surface-dark-elevated: #252320;
+    --color-surface-dark-soft: #1f1e1b;
+    --color-hairline: #e6dfd8;
+    --color-hairline-soft: #ebe6df;
+    
+    /* Text Colors */
+    --color-ink: #141413;
+    --color-body-strong: #252523;
+    --color-body: #3d3d3a;
+    --color-muted: #6c6a64;
+    --color-muted-soft: #8e8b82;
+    --color-on-primary: #ffffff;
+    --color-on-dark: #faf9f5;
+    --color-on-dark-soft: #a09d96;
+    
+    /* Semantic Colors */
+    --color-success: #5db872;
+    --color-warning: #d4a017;
+    --color-error: #c64545;
+    
+    /* Spacing System */
+    --spacing-xxs: 4px;
+    --spacing-xs: 8px;
+    --spacing-sm: 12px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+    --spacing-xxl: 48px;
+    --spacing-section: 96px;
+    
+    /* Border Radius */
+    --rounded-xs: 4px;
+    --rounded-sm: 6px;
+    --rounded-md: 8px;
+    --rounded-lg: 12px;
+    --rounded-xl: 16px;
+    --rounded-pill: 9999px;
+    --rounded-full: 50%;
+    
+    /* Typography - Using system fonts as substitutes */
+    --font-display: 'Tiempos Headline', 'Cormorant Garamond', 'EB Garamond', Garamond, 'Times New Roman', serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-code: 'JetBrains Mono', 'Courier New', monospace;
+    
+    /* Shadows */
+    --shadow-subtle: 0 1px 3px rgba(20, 20, 19, 0.08);
+}
+
+/* ===================================
+   Reset and Base Styles
+   =================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-body);
+    background-color: var(--color-canvas);
+    color: var(--color-body);
+    line-height: 1.55;
+    font-size: 16px;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===================================
+   Typography Scale
+   =================================== */
+h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    color: var(--color-ink);
+    line-height: 1.15;
+}
+
+h1 {
+    font-size: 48px;
+    letter-spacing: -1px;
+    line-height: 1.1;
+}
+
+h2 {
+    font-size: 36px;
+    letter-spacing: -0.5px;
+    line-height: 1.15;
+}
+
+h3 {
+    font-size: 28px;
+    letter-spacing: -0.3px;
+    line-height: 1.2;
+}
+
+h4 {
+    font-size: 22px;
+    letter-spacing: 0;
+    line-height: 1.3;
+}
+
+.title-lg {
+    font-family: var(--font-body);
+    font-size: 22px;
+    font-weight: 500;
+    line-height: 1.3;
+}
+
+.title-md {
+    font-family: var(--font-body);
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.title-sm {
+    font-family: var(--font-body);
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.body-md {
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.55;
+}
+
+.body-sm {
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.55;
+}
+
+.caption {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.caption-uppercase {
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.4;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+
+/* ===================================
+   Navigation Bar
+   =================================== */
+.navbar {
+    background-color: var(--color-canvas);
+    border-bottom: 1px solid var(--color-hairline);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    height: 64px;
+}
+
+.navbar .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-lg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 100%;
+}
+
+.nav-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.logo-icon {
+    width: 32px;
+    height: 32px;
+}
+
+.logo-icon rect,
+.logo-icon circle {
+    stroke: var(--color-primary);
+    fill: var(--color-primary);
+}
+
+.nav-brand h1 {
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--color-ink);
+    letter-spacing: -0.5px;
+    font-family: var(--font-body);
+}
+
+.nav-links {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.nav-link {
+    text-decoration: none;
+    color: var(--color-muted);
+    font-weight: 500;
+    font-size: 14px;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--rounded-md);
+    transition: all 150ms ease-in-out;
+}
+
+.nav-link:hover {
+    color: var(--color-ink);
+    background-color: var(--color-surface-soft);
+}
+
+.nav-link.active {
+    color: var(--color-ink);
+    background-color: var(--color-surface-card);
+}
+
+/* ===================================
+   Main Content Layout
+   =================================== */
+.main-content {
+    padding: var(--spacing-section) var(--spacing-lg);
+    min-height: calc(100vh - 64px);
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.page-header {
+    margin-bottom: var(--spacing-xxl);
+}
+
+.page-header h2 {
+    margin-bottom: var(--spacing-sm);
+}
+
+.subtitle {
+    font-size: 18px;
+    color: var(--color-muted);
+    font-weight: 400;
+}
+
+/* ===================================
+   Grid Layout
+   =================================== */
+.content-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-xl);
+}
+
+@media (min-width: 1024px) {
+    .content-grid {
+        grid-template-columns: 2fr 1fr;
+    }
+}
+
+/* ===================================
+   Card Component
+   =================================== */
+.card {
+    background-color: var(--color-surface-card);
+    border-radius: var(--rounded-lg);
+    padding: var(--spacing-xl);
+    margin-bottom: var(--spacing-xl);
+    border: 1px solid var(--color-hairline);
+}
+
+.card-title {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--color-ink);
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--color-hairline);
+    letter-spacing: -0.3px;
+}
+
+/* ===================================
+   Buttons
+   =================================== */
+.btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: var(--rounded-md);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 150ms ease-in-out;
+    font-family: var(--font-body);
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+}
+
+.btn-primary:hover {
+    background-color: var(--color-primary-active);
+}
+
+.btn-primary:active {
+    background-color: var(--color-primary-active);
+}
+
+.btn-secondary {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    border: 1px solid var(--color-hairline);
+}
+
+.btn-secondary:hover {
+    background-color: var(--color-surface-soft);
+}
+
+.btn-danger {
+    background-color: var(--color-error);
+    color: var(--color-on-primary);
+}
+
+.btn-danger:hover {
+    background-color: #a93838;
+}
+
+/* ===================================
+   Form Elements
+   =================================== */
+.form-group {
+    margin-bottom: var(--spacing-lg);
+}
+
+.form-label {
+    display: block;
+    font-weight: 500;
+    color: var(--color-body-strong);
+    margin-bottom: var(--spacing-sm);
+    font-size: 14px;
+}
+
+.form-select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--rounded-md);
+    font-size: 16px;
+    color: var(--color-ink);
+    background-color: var(--color-canvas);
+    transition: all 150ms ease-in-out;
+    cursor: pointer;
+    font-family: var(--font-body);
+    height: 40px;
+}
+
+.form-select:hover {
+    border-color: var(--color-primary);
+}
+
+.form-select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(204, 120, 92, 0.15);
+}
+
+/* ===================================
+   Time Slots Grid
+   =================================== */
+.time-slots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-md);
+}
+
+.time-slot-card {
+    background-color: var(--color-canvas);
+    border: 1px solid var(--color-hairline);
+    border-radius: var(--rounded-md);
+    padding: var(--spacing-md);
+    text-align: center;
+    font-weight: 500;
+    color: var(--color-body-strong);
+    cursor: pointer;
+    transition: all 150ms ease-in-out;
+    user-select: none;
+}
+
+.time-slot-card:hover {
+    border-color: var(--color-primary);
+    background-color: var(--color-surface-soft);
+}
+
+.time-slot-card.selected {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-on-primary);
+}
+
+.placeholder-text {
+    color: var(--color-muted);
+    font-style: italic;
+    text-align: center;
+    padding: var(--spacing-xl);
+}
+
+/* ===================================
+   Confirmation Area
+   =================================== */
+.confirmation-area {
+    margin-top: var(--spacing-xl);
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.confirmation-card {
+    background-color: var(--color-surface-dark);
+    border-radius: var(--rounded-lg);
+    padding: var(--spacing-xl);
+    color: var(--color-on-dark);
+}
+
+.confirmation-card h4 {
+    font-size: 22px;
+    margin-bottom: var(--spacing-lg);
+    font-weight: 400;
+    color: var(--color-on-dark);
+}
+
+.confirmation-details {
+    background-color: var(--color-surface-dark-elevated);
+    border-radius: var(--rounded-md);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    font-weight: 500;
+    color: var(--color-on-dark-soft);
+    font-size: 14px;
+}
+
+.detail-value {
+    font-weight: 500;
+    color: var(--color-on-dark);
+}
+
+.confirmation-card .btn-primary {
+    background-color: var(--color-canvas);
+    color: var(--color-primary);
+    margin-right: var(--spacing-sm);
+}
+
+.confirmation-card .btn-primary:hover {
+    background-color: var(--color-surface-soft);
+}
+
+.confirmation-card .btn-secondary {
+    background-color: transparent;
+    color: var(--color-on-dark);
+    border: 1px solid var(--color-on-dark-soft);
+}
+
+.confirmation-card .btn-secondary:hover {
+    background-color: var(--color-surface-dark-elevated);
+}
+
+/* ===================================
+   Appointments List
+   =================================== */
+.appointments-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.appointment-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+    background-color: var(--color-canvas);
+    border-radius: var(--rounded-md);
+    border-left: 3px solid var(--color-primary);
+    transition: all 150ms ease-in-out;
+}
+
+.appointment-item:hover {
+    background-color: var(--color-surface-soft);
+    transform: translateX(4px);
+}
+
+.appointment-icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+    border-radius: var(--rounded-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.appointment-details {
+    flex: 1;
+}
+
+.appointment-date {
+    font-weight: 600;
+    color: var(--color-ink);
+    margin-bottom: var(--spacing-xxs);
+}
+
+.appointment-doctor {
+    font-size: 14px;
+    color: var(--color-muted);
+}
+
+/* ===================================
+   Reminders Section
+   =================================== */
+.reminders-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.reminder-item {
+    display: flex;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+    background-color: var(--color-canvas);
+    border-radius: var(--rounded-md);
+    border-left: 3px solid var(--color-accent-teal);
+    transition: all 150ms ease-in-out;
+}
+
+.reminder-item:hover {
+    background-color: var(--color-surface-soft);
+    transform: translateX(4px);
+}
+
+.reminder-icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    background-color: var(--color-accent-teal);
+    color: var(--color-on-primary);
+    border-radius: var(--rounded-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.medication-icon {
+    background-color: var(--color-primary);
+}
+
+.reminder-content {
+    flex: 1;
+}
+
+.reminder-title {
+    font-weight: 600;
+    color: var(--color-ink);
+    margin-bottom: var(--spacing-xxs);
+}
+
+.reminder-time {
+    font-size: 14px;
+    color: var(--color-muted);
+    margin-bottom: var(--spacing-xxs);
+}
+
+.reminder-notes {
+    font-size: 14px;
+    color: var(--color-muted-soft);
+    font-style: italic;
+}
+
+/* ===================================
+   Tasks Section
+   =================================== */
+.tasks-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.task-item {
+    display: flex;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+    background-color: var(--color-canvas);
+    border-radius: var(--rounded-md);
+    border-left: 3px solid var(--color-accent-amber);
+    transition: all 150ms ease-in-out;
+}
+
+.task-item:hover {
+    background-color: var(--color-surface-soft);
+    transform: translateX(4px);
+}
+
+.task-icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    background-color: var(--color-accent-amber);
+    color: var(--color-on-primary);
+    border-radius: var(--rounded-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.task-content {
+    flex: 1;
+}
+
+.task-title {
+    font-weight: 600;
+    color: var(--color-ink);
+    margin-bottom: var(--spacing-xxs);
+}
+
+.task-datetime {
+    font-size: 14px;
+    color: var(--color-muted);
+    margin-bottom: var(--spacing-xxs);
+}
+
+.task-location {
+    font-size: 14px;
+    color: var(--color-muted-soft);
+}
+
+/* ===================================
+   Modal
+   =================================== */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(20, 20, 19, 0.6);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-content {
+    background-color: var(--color-canvas);
+    border-radius: var(--rounded-xl);
+    padding: var(--spacing-xxl);
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 20px 25px -5px rgba(20, 20, 19, 0.2);
+    text-align: center;
+    animation: scaleIn 0.3s ease-out;
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.modal-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto var(--spacing-lg);
+    border-radius: var(--rounded-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.success-icon {
+    background-color: rgba(93, 184, 114, 0.15);
+    color: var(--color-success);
+}
+
+.error-icon {
+    background-color: rgba(198, 69, 69, 0.15);
+    color: var(--color-error);
+}
+
+.modal-content h3 {
+    font-size: 28px;
+    color: var(--color-ink);
+    margin-bottom: var(--spacing-md);
+}
+
+.modal-content p {
+    color: var(--color-muted);
+    margin-bottom: var(--spacing-xl);
+    line-height: 1.6;
+}
+
+.modal-content .btn {
+    width: 100%;
+}
+
+.modal-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+}
+
+.modal-actions .btn {
+    flex: 1;
+    margin: 0;
+}
+
+/* ===================================
+   Appointments Page Styles
+   =================================== */
+.appointments-section {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.appointments-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: var(--spacing-xl);
+}
+
+.appointment-card {
+    background-color: var(--color-surface-card);
+    border: 1px solid var(--color-hairline);
+    transition: all 150ms ease-in-out;
+}
+
+.appointment-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-subtle);
+}
+
+.appointment-card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    padding-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--color-hairline);
+    margin-bottom: var(--spacing-lg);
+}
+
+.appointment-card-info {
+    flex: 1;
+}
+
+.appointment-card .appointment-date {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--color-ink);
+    margin-bottom: var(--spacing-xs);
+}
+
+.appointment-card .appointment-time {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--color-primary);
+}
+
+.appointment-card-body {
+    margin-bottom: var(--spacing-lg);
+}
+
+.appointment-card-body .detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid var(--color-hairline-soft);
+    color: var(--color-body);
+}
+
+.appointment-card-body .detail-row:last-child {
+    border-bottom: none;
+}
+
+.appointment-card-body .detail-label {
+    font-weight: 500;
+    color: var(--color-muted);
+    font-size: 14px;
+}
+
+.appointment-card-body .detail-value {
+    font-weight: 500;
+    color: var(--color-ink);
+    text-align: right;
+}
+
+.appointment-card-footer {
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--color-hairline);
+}
+
+.appointment-card-footer .btn {
+    width: 100%;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: var(--spacing-xxl) var(--spacing-xl);
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: var(--color-surface-card);
+}
+
+.empty-state-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto var(--spacing-xl);
+    background-color: var(--color-surface-soft);
+    border-radius: var(--rounded-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-muted);
+}
+
+.empty-state h3 {
+    font-size: 28px;
+    color: var(--color-ink);
+    margin-bottom: var(--spacing-md);
+}
+
+.empty-state p {
+    color: var(--color-muted);
+    margin-bottom: var(--spacing-xl);
+    line-height: 1.6;
+}
+
+.empty-state .btn {
+    display: inline-block;
+    text-decoration: none;
+}
+
+/* ===================================
+   Profile Page Styles
+   =================================== */
+.profile-layout {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.profile-header-card {
+    margin-bottom: var(--spacing-xl);
+    background-color: var(--color-surface-card);
+}
+
+.profile-header-content {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xl);
+}
+
+.profile-avatar {
+    flex-shrink: 0;
+    width: 100px;
+    height: 100px;
+    background-color: var(--color-primary);
+    border-radius: var(--rounded-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-on-primary);
+}
+
+.profile-header-info {
+    flex: 1;
+}
+
+.profile-name {
+    font-size: 32px;
+    font-weight: 400;
+    color: var(--color-ink);
+    margin-bottom: var(--spacing-sm);
+    font-family: var(--font-display);
+    letter-spacing: -0.5px;
+}
+
+.profile-meta {
+    display: flex;
+    gap: var(--spacing-lg);
+    flex-wrap: wrap;
+}
+
+.profile-meta-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    color: var(--color-muted);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.profile-meta-item svg {
+    color: var(--color-primary);
+}
+
+.profile-left-column,
+.profile-right-column {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xl);
+}
+
+/* Info List Styles */
+.info-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+    background-color: var(--color-canvas);
+    border-radius: var(--rounded-md);
+    transition: all 150ms ease-in-out;
+}
+
+.info-item:hover {
+    background-color: var(--color-surface-soft);
+    transform: translateX(4px);
+}
+
+.info-icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+    border-radius: var(--rounded-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.info-content {
+    flex: 1;
+}
+
+.info-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: var(--spacing-xs);
+}
+
+.info-value {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--color-ink);
+}
+
+/* Emergency Contact Styles */
+.emergency-contact-card {
+    border-left: 3px solid var(--color-error);
+    background-color: var(--color-surface-card);
+}
+
+.emergency-contact-content {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    background-color: var(--color-canvas);
+    border-radius: var(--rounded-md);
+}
+
+.emergency-icon {
+    flex-shrink: 0;
+    width: 60px;
+    height: 60px;
+    background-color: var(--color-error);
+    color: var(--color-on-primary);
+    border-radius: var(--rounded-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.emergency-info {
+    flex: 1;
+}
+
+.emergency-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-ink);
+    margin-bottom: var(--spacing-xs);
+}
+
+.emergency-relationship {
+    font-size: 14px;
+    color: var(--color-muted);
+    margin-bottom: var(--spacing-xs);
+}
+
+.emergency-phone {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--color-primary);
+}
+
+/* Medical Section Styles */
+.medical-section {
+    margin-bottom: var(--spacing-xl);
+}
+
+.medical-section:last-child {
+    margin-bottom: 0;
+}
+
+.medical-section-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--color-body-strong);
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--color-hairline);
+}
+
+/* Allergy Tags */
+.allergies-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+}
+
+.tag-allergy {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background-color: rgba(198, 69, 69, 0.1);
+    color: var(--color-error);
+    border-radius: var(--rounded-pill);
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid var(--color-error);
+    transition: all 150ms ease-in-out;
+}
+
+.tag-allergy:hover {
+    background-color: var(--color-error);
+    color: var(--color-on-primary);
+    transform: translateY(-2px);
+}
+
+/* Medications List */
+.medications-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.medication-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background-color: var(--color-canvas);
+    border-radius: var(--rounded-md);
+    border-left: 3px solid var(--color-primary);
+    transition: all 150ms ease-in-out;
+}
+
+.medication-item:hover {
+    background-color: var(--color-surface-soft);
+    transform: translateX(4px);
+}
+
+.medication-icon {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+    border-radius: var(--rounded-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.medication-text {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-body);
+}
+
+.no-data {
+    color: var(--color-muted);
+    font-style: italic;
+    text-align: center;
+    padding: var(--spacing-lg);
+}
+
+/* Edit Profile Button */
+.edit-profile-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+}
+
+.edit-profile-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* ===================================
+   Responsive Design
+   =================================== */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 32px;
+    }
+    
+    h2 {
+        font-size: 28px;
+    }
+    
+    h3 {
+        font-size: 22px;
+    }
+    
+    .navbar .container {
+        flex-direction: column;
+        gap: var(--spacing-md);
+        height: auto;
+        padding: var(--spacing-md);
+    }
+    
+    .nav-links {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .main-content {
+        padding: var(--spacing-xxl) var(--spacing-md);
+    }
+    
+    .card {
+        padding: var(--spacing-lg);
+    }
+    
+    .time-slots-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .confirmation-card {
+        padding: var(--spacing-lg);
+    }
+    
+    .btn {
+        width: 100%;
+        margin-bottom: var(--spacing-sm);
+    }
+    
+    .confirmation-card .btn-primary {
+        margin-right: 0;
+    }
+    
+    .appointments-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-actions {
+        flex-direction: column;
+    }
+    
+    .modal-actions .btn {
+        width: 100%;
+    }
+    
+    .profile-header-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .profile-meta {
+        justify-content: center;
+    }
+    
+    .emergency-contact-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .info-item {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+/* ===================================
+   Accessibility
+   =================================== */
+.btn:focus,
+.form-select:focus,
+.time-slot-card:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.nav-link:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* Reduced motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Made with Bob - Claude.com Design System */
+
+/* Made with Bob */
