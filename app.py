@@ -1,7 +1,13 @@
 from flask import Flask, render_template, request, jsonify
 from datetime import datetime, timedelta
+import requests
+import json
 
 app = Flask(__name__)
+
+# Hugging Face API Configuration
+HF_API_TOKEN = "insert API token"  # Replace with your actual token
+API_URL = "https://api-inference.huggingface.co/models/BioMistral/BioMistral-7B"
 
 # Mock data for available time slots
 available_slots = {
@@ -79,7 +85,7 @@ patient_profile = {
     'current_health_status': {
         'active_diagnoses': [
             {
-                'condition': 'Ligna',
+                'condition': 'Acute Pharyngitis',
                 'status': 'Under Treatment',
                 'diagnosed_date': '2026-05-15'
             }
@@ -131,7 +137,7 @@ MEDICAL_KNOWLEDGE_BASE = {
     },
     'conditions': {
         'acute pharyngitis': {
-            'name': 'Sugondese',
+            'name': 'Acute Pharyngitis',
             'description': 'Inflammation of the throat (pharynx), commonly known as a sore throat, often caused by bacterial infection.',
             'symptoms': 'Sore throat, difficulty swallowing, fever, swollen lymph nodes.',
             'treatment': 'Antibiotics (Amoxicillin), rest, hydration, and pain relievers.',
@@ -159,6 +165,109 @@ SAFETY_KEYWORDS = {
     'substitute': ['substitute', 'replace medicine', 'alternative medicine', 'switch to',
                    'instead of', 'can i take instead']
 }
+
+# Dangerous keywords to check in AI responses
+DANGEROUS_RESPONSE_KEYWORDS = [
+    'stop taking medication',
+    'stop your medication',
+    'discontinue medication',
+    'increase your dose',
+    'decrease your dose',
+    'change your dose',
+    'you should stop',
+    'emergency room',
+    'call 911',
+    'seek immediate',
+    'go to hospital'
+]
+
+def query_ai_model(payload):
+    """
+    Query the Hugging Face BioMistral-7B model
+    Returns the AI-generated text or an error message
+    """
+    headers = {
+        "Authorization": f"Bearer {HF_API_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    
+    try:
+        response = requests.post(API_URL, headers=headers, json=payload, timeout=30)
+        
+        # Handle model loading time
+        if response.status_code == 503:
+            error_data = response.json()
+            if 'estimated_time' in error_data:
+                return {
+                    'error': True,
+                    'message': f"Model is loading. Please wait approximately {error_data['estimated_time']:.0f} seconds and try again."
+                }
+            return {
+                'error': True,
+                'message': "Model is currently loading. Please try again in a moment."
+            }
+        
+        # Handle rate limiting
+        if response.status_code == 429:
+            return {
+                'error': True,
+                'message': "Rate limit exceeded. Please wait a moment before trying again."
+            }
+        
+        # Handle authentication errors
+        if response.status_code == 401:
+            return {
+                'error': True,
+                'message': "API authentication failed. Please check the API token configuration."
+            }
+        
+        # Handle successful response
+        if response.status_code == 200:
+            result = response.json()
+            if isinstance(result, list) and len(result) > 0:
+                return {
+                    'error': False,
+                    'text': result[0].get('generated_text', '')
+                }
+            return {
+                'error': True,
+                'message': "Unexpected response format from AI model."
+            }
+        
+        # Handle other errors
+        return {
+            'error': True,
+            'message': f"API request failed with status code {response.status_code}"
+        }
+        
+    except requests.exceptions.Timeout:
+        return {
+            'error': True,
+            'message': "Request timed out. The AI model may be busy. Please try again."
+        }
+    except requests.exceptions.RequestException as e:
+        return {
+            'error': True,
+            'message': f"Network error: {str(e)}"
+        }
+    except Exception as e:
+        return {
+            'error': True,
+            'message': f"Unexpected error: {str(e)}"
+        }
+
+def check_response_safety(ai_response):
+    """
+    Check if AI response contains dangerous keywords
+    Returns (is_safe, warning_message)
+    """
+    response_lower = ai_response.lower()
+    
+    for keyword in DANGEROUS_RESPONSE_KEYWORDS:
+        if keyword in response_lower:
+            return False, "⚠️ **Safety Override**: This response has been flagged for containing potentially dangerous medical advice. Please consult your doctor directly for any changes to your treatment plan."
+    
+    return True, None
 
 def get_ai_response(user_message, patient_context):
     """
@@ -319,15 +428,97 @@ def chat():
                 'message': 'Message cannot be empty'
             }), 400
         
-        # Get AI response with patient context
+        # First, check safety guardrails (emergency, diagnosis, dosage changes)
         ai_response = get_ai_response(user_message, patient_profile)
+        
+        # If safety check triggered, return immediately without calling AI
+        if ai_response['escalate']:
+            return jsonify({
+                'success': True,
+                'response': ai_response['response'],
+                'type': ai_response['type'],
+                'escalate': ai_response['escalate']
+            })
+        
+        # If safety checks passed, construct prompt for AI model
+        diagnosis = patient_profile['current_health_status']['active_diagnoses'][0]['condition']
+        symptoms = ', '.join(patient_profile['current_health_status']['active_symptoms'])
+        medications = '\n'.join([f"- {med}" for med in patient_profile['current_medications']])
+        doctor_name = patient_profile['primary_doctor']['name']
+        allergies = ', '.join(patient_profile['allergies'])
+        
+        # Construct strict system prompt
+        system_prompt = f"""You are a medical assistant for a patient. Provide helpful, accurate information based ONLY on the context below.
+
+Patient Context:
+- Name: {patient_profile['name']}
+- Diagnosis: {diagnosis}
+- Symptoms: {symptoms}
+- Current Medications:
+{medications}
+- Allergies: {allergies}
+- Primary Doctor: {doctor_name}
+
+IMPORTANT RULES:
+1. Base your answer ONLY on the patient context and general medical knowledge
+2. Do NOT diagnose new conditions
+3. Do NOT recommend changing medication dosages
+4. Do NOT recommend stopping or substituting medications
+5. For emergencies, tell the patient to call 911 or go to the ER
+6. Keep responses concise (2-3 paragraphs maximum)
+7. Always remind the patient to consult {doctor_name} for medical decisions
+
+Patient Question: {user_message}
+
+Answer:"""
+
+        # Query the AI model
+        payload = {
+            "inputs": system_prompt,
+            "parameters": {
+                "max_new_tokens": 250,
+                "temperature": 0.7,
+                "top_p": 0.9,
+                "do_sample": True,
+                "return_full_text": False
+            }
+        }
+        
+        ai_result = query_ai_model(payload)
+        
+        # Handle API errors
+        if ai_result.get('error'):
+            return jsonify({
+                'success': True,
+                'response': f"⚠️ AI Model Unavailable: {ai_result['message']}\n\nIn the meantime, I can help with:\n• Medication information from your records\n• Dietary advice for {diagnosis}\n• General symptom information\n\nPlease try your question again, or contact {doctor_name} directly.",
+                'type': 'error',
+                'escalate': False
+            })
+        
+        # Extract AI response
+        ai_text = ai_result['text'].strip()
+        
+        # Safety check on AI response
+        is_safe, warning = check_response_safety(ai_text)
+        
+        if not is_safe:
+            return jsonify({
+                'success': True,
+                'response': warning,
+                'type': 'safety_warning',
+                'escalate': True
+            })
+        
+        # Add disclaimer to AI response
+        final_response = f"{ai_text}\n\n---\n*Generated by AI. Always consult {doctor_name} for medical advice.*"
         
         return jsonify({
             'success': True,
-            'response': ai_response['response'],
-            'type': ai_response['type'],
-            'escalate': ai_response['escalate']
+            'response': final_response,
+            'type': 'ai_generated',
+            'escalate': False
         })
+        
     except Exception as e:
         return jsonify({
             'success': False,

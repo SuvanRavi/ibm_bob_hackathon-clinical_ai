@@ -1633,12 +1633,13 @@ h4 {
 
 /* Typing Indicator */
 .typing-indicator {
-    opacity: 0.7;
+    opacity: 1;
 }
 
-.typing-dots {
+.typing-bubble {
     display: flex;
-    gap: 6px;
+    align-items: center;
+    gap: var(--spacing-sm);
     padding: var(--spacing-md) var(--spacing-lg);
     background-color: var(--color-surface-card);
     border: 1px solid var(--color-hairline);
@@ -1647,12 +1648,28 @@ h4 {
     width: fit-content;
 }
 
+.typing-text {
+    font-size: 14px;
+    color: var(--color-muted);
+    font-weight: 500;
+}
+
+.typing-dots {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
 .typing-dots span {
     width: 8px;
     height: 8px;
-    background-color: var(--color-muted);
+    background-color: var(--color-accent-teal);
     border-radius: var(--rounded-full);
     animation: typingDot 1.4s infinite;
+}
+
+.typing-dots span:nth-child(1) {
+    animation-delay: 0s;
 }
 
 .typing-dots span:nth-child(2) {
@@ -1666,10 +1683,10 @@ h4 {
 @keyframes typingDot {
     0%, 60%, 100% {
         transform: translateY(0);
-        opacity: 0.4;
+        opacity: 0.3;
     }
     30% {
-        transform: translateY(-10px);
+        transform: translateY(-8px);
         opacity: 1;
     }
 }
