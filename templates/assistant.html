@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedAssistant - AI Health Assistant</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Navigation Header -->
+    <header class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <svg class="logo-icon" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="14" y="8" width="4" height="16" fill="#2563eb"/>
+                    <rect x="8" y="14" width="16" height="4" fill="#2563eb"/>
+                    <circle cx="16" cy="16" r="14" stroke="#2563eb" stroke-width="2" fill="none"/>
+                </svg>
+                <h1>MedAssistant</h1>
+            </div>
+            <nav class="nav-links">
+                <a href="/" class="nav-link">Schedule</a>
+                <a href="{{ url_for('appointments') }}" class="nav-link">My Appointments</a>
+                <a href="{{ url_for('profile') }}" class="nav-link">Profile</a>
+                <a href="{{ url_for('assistant') }}" class="nav-link active">AI Assistant</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content chat-main">
+        <div class="container chat-container">
+            <!-- Page Header -->
+            <div class="page-header chat-header">
+                <div class="chat-header-content">
+                    <div>
+                        <h2>AI Health Assistant</h2>
+                        <p class="subtitle">Post-consultation support for {{ patient_profile.name }}</p>
+                    </div>
+                    <a href="{{ url_for('profile') }}" class="btn btn-secondary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Back to Profile
+                    </a>
+                </div>
+            </div>
+
+            <!-- Safety Disclaimer -->
+            <div class="safety-disclaimer">
+                <div class="disclaimer-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <div class="disclaimer-text">
+                    <strong>Important:</strong> This AI provides information based on your doctor's notes and your current diagnosis of <strong>Acute Pharyngitis</strong>. For medical emergencies, call 911 immediately. For changes to your treatment, contact Dr. Sarah Johnson.
+                </div>
+            </div>
+
+            <!-- Chat Interface -->
+            <div class="chat-interface">
+                <!-- Chat Messages Container -->
+                <div class="chat-messages" id="chat-messages">
+                    <!-- Welcome Message -->
+                    <div class="chat-message ai-message">
+                        <div class="message-avatar">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M9.09 9C9.3251 8.33167 9.78915 7.76811 10.4 7.40913C11.0108 7.05016 11.7289 6.91894 12.4272 7.03871C13.1255 7.15849 13.7588 7.52152 14.2151 8.06353C14.6713 8.60553 14.9211 9.29152 14.92 10C14.92 12 11.92 13 11.92 13M12 17H12.01M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <div class="message-content">
+                            <div class="message-bubble ai-bubble">
+                                <p>Hello {{ patient_profile.name }}! I'm your AI Health Assistant. I can help answer questions about:</p>
+                                <ul>
+                                    <li>Your medications (Amoxicillin, Vitamin D3, Lisinopril)</li>
+                                    <li>Dietary recommendations for your Acute Pharyngitis</li>
+                                    <li>Your current symptoms and treatment</li>
+                                    <li>General post-consultation care</li>
+                                </ul>
+                                <p>What would you like to know?</p>
+                            </div>
+                            <div class="message-time">Just now</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Input Area -->
+                <div class="chat-input-area">
+                    <div class="chat-input-container">
+                        <input 
+                            type="text" 
+                            id="chat-input" 
+                            class="chat-input" 
+                            placeholder="Ask about your medications, diet, or symptoms..."
+                            autocomplete="off"
+                        >
+                        <button id="send-button" class="btn btn-primary chat-send-btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 8L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            Send
+                        </button>
+                    </div>
+                    <div class="chat-input-hint">
+                        Press Enter to send • Type your question about medications, diet, or symptoms
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- JavaScript for Chat Functionality -->
+    <script>
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chat-input');
+        const sendButton = document.getElementById('send-button');
+
+        // Auto-scroll to bottom
+        function scrollToBottom() {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Get current time string
+        function getCurrentTime() {
+            const now = new Date();
+            return now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        }
+
+        // Add user message to chat
+        function addUserMessage(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message user-message';
+            messageDiv.innerHTML = `
+                <div class="message-avatar">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <div class="message-content">
+                    <div class="message-bubble user-bubble">
+                        ${escapeHtml(message)}
+                    </div>
+                    <div class="message-time">${getCurrentTime()}</div>
+                </div>
+            `;
+            chatMessages.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        // Add AI message to chat
+        function addAIMessage(message, type = 'general') {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message ai-message';
+            
+            // Determine bubble class based on type
+            let bubbleClass = 'ai-bubble';
+            if (type === 'emergency' || type === 'safety_warning') {
+                bubbleClass = 'ai-bubble-warning';
+            }
+            
+            // Convert markdown-style formatting to HTML
+            const formattedMessage = formatMessage(message);
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9.09 9C9.3251 8.33167 9.78915 7.76811 10.4 7.40913C11.0108 7.05016 11.7289 6.91894 12.4272 7.03871C13.1255 7.15849 13.7588 7.52152 14.2151 8.06353C14.6713 8.60553 14.9211 9.29152 14.92 10C14.92 12 11.92 13 11.92 13M12 17H12.01M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <div class="message-content">
+                    <div class="message-bubble ${bubbleClass}">
+                        ${formattedMessage}
+                    </div>
+                    <div class="message-time">${getCurrentTime()}</div>
+                </div>
+            `;
+            chatMessages.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        // Add typing indicator
+        function addTypingIndicator() {
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'chat-message ai-message typing-indicator';
+            typingDiv.id = 'typing-indicator';
+            typingDiv.innerHTML = `
+                <div class="message-avatar">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9.09 9C9.3251 8.33167 9.78915 7.76811 10.4 7.40913C11.0108 7.05016 11.7289 6.91894 12.4272 7.03871C13.1255 7.15849 13.7588 7.52152 14.2151 8.06353C14.6713 8.60553 14.9211 9.29152 14.92 10C14.92 12 11.92 13 11.92 13M12 17H12.01M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <div class="message-content">
+                    <div class="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            `;
+            chatMessages.appendChild(typingDiv);
+            scrollToBottom();
+        }
+
+        // Remove typing indicator
+        function removeTypingIndicator() {
+            const typingIndicator = document.getElementById('typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        // Format message (convert markdown-style to HTML)
+        function formatMessage(message) {
+            // Escape HTML first
+            let formatted = escapeHtml(message);
+            
+            // Convert **bold** to <strong>
+            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            // Convert line breaks
+            formatted = formatted.replace(/\n/g, '<br>');
+            
+            // Convert bullet points
+            formatted = formatted.replace(/• /g, '<br>• ');
+            
+            return formatted;
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Send message
+        async function sendMessage() {
+            const message = chatInput.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message
+            addUserMessage(message);
+            
+            // Clear input
+            chatInput.value = '';
+            
+            // Disable input while processing
+            chatInput.disabled = true;
+            sendButton.disabled = true;
+            
+            // Show typing indicator
+            addTypingIndicator();
+            
+            try {
+                // Send to API
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+                
+                const data = await response.json();
+                
+                // Remove typing indicator
+                removeTypingIndicator();
+                
+                if (data.success) {
+                    // Add AI response
+                    addAIMessage(data.response, data.type);
+                } else {
+                    addAIMessage('Sorry, I encountered an error processing your request. Please try again.', 'error');
+                }
+            } catch (error) {
+                removeTypingIndicator();
+                console.error('Error:', error);
+                addAIMessage('Sorry, I encountered a connection error. Please check your internet connection and try again.', 'error');
+            } finally {
+                // Re-enable input
+                chatInput.disabled = false;
+                sendButton.disabled = false;
+                chatInput.focus();
+            }
+        }
+
+        // Event listeners
+        sendButton.addEventListener('click', sendMessage);
+        
+        chatInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Focus input on load
+        chatInput.focus();
+    </script>
+</body>
+</html>

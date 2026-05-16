@@ -70,8 +70,185 @@ patient_profile = {
         'name': 'Sarah Anderson',
         'phone': '+1 (555) 987-6543',
         'relationship': 'Spouse'
+    },
+    'current_health_status': {
+        'active_diagnoses': [
+            {
+                'condition': 'Acute Pharyngitis',
+                'status': 'Under Treatment',
+                'diagnosed_date': '2026-05-15'
+            }
+        ],
+        'active_symptoms': [
+            'Sore throat',
+            'Low grade fever',
+            'Fatigue',
+            'Difficulty swallowing'
+        ]
     }
 }
+
+# Medical Knowledge Base for AI Assistant
+MEDICAL_KNOWLEDGE_BASE = {
+    'medications': {
+        'amoxicillin': {
+            'name': 'Amoxicillin 500mg',
+            'purpose': 'Amoxicillin is an antibiotic used to treat bacterial infections, including throat infections like your Acute Pharyngitis.',
+            'dosage': 'Take 500mg twice daily as prescribed by Dr. Sarah Johnson.',
+            'side_effects': 'Common side effects may include nausea, diarrhea, or rash. Contact your doctor if symptoms worsen.',
+            'precautions': 'Take with food to reduce stomach upset. Complete the full course even if you feel better.',
+            'interactions': 'Avoid alcohol while taking Amoxicillin as it may reduce effectiveness and increase side effects.'
+        },
+        'paracetamol': {
+            'name': 'Paracetamol (Acetaminophen)',
+            'purpose': 'Used to reduce fever and relieve pain, including sore throat pain.',
+            'dosage': 'Take 500-1000mg every 4-6 hours as needed, not exceeding 4000mg per day.',
+            'side_effects': 'Generally well-tolerated. Rare side effects include allergic reactions.',
+            'precautions': 'Do not exceed recommended dose. Avoid alcohol to prevent liver damage.',
+            'interactions': 'Safe with most medications, but inform your doctor of all medicines you take.'
+        },
+        'vitamin d3': {
+            'name': 'Vitamin D3',
+            'purpose': 'Supports immune system function and bone health.',
+            'dosage': 'Take once daily with breakfast as prescribed.',
+            'side_effects': 'Rare when taken as directed.',
+            'precautions': 'Take with food for better absorption.',
+            'interactions': 'Generally safe with other medications.'
+        },
+        'lisinopril': {
+            'name': 'Lisinopril 10mg',
+            'purpose': 'Used to treat high blood pressure.',
+            'dosage': 'Take 10mg once daily as prescribed.',
+            'side_effects': 'May cause dizziness, dry cough, or fatigue.',
+            'precautions': 'Rise slowly from sitting/lying position to prevent dizziness.',
+            'interactions': 'Avoid potassium supplements unless directed by your doctor.'
+        }
+    },
+    'conditions': {
+        'acute pharyngitis': {
+            'name': 'Acute Pharyngitis',
+            'description': 'Inflammation of the throat (pharynx), commonly known as a sore throat, often caused by bacterial infection.',
+            'symptoms': 'Sore throat, difficulty swallowing, fever, swollen lymph nodes.',
+            'treatment': 'Antibiotics (Amoxicillin), rest, hydration, and pain relievers.',
+            'dietary_advice': [
+                'Drink plenty of warm fluids (warm water, herbal tea, warm soup)',
+                'Avoid spicy, acidic, or rough foods that may irritate your throat',
+                'Eat soft, easy-to-swallow foods like yogurt, mashed potatoes, or smoothies',
+                'Stay hydrated - aim for 8-10 glasses of water daily',
+                'Avoid alcohol while on antibiotics',
+                'Honey and lemon in warm water can soothe throat pain'
+            ],
+            'recovery_time': 'Most patients recover within 7-10 days with proper treatment.',
+            'warning_signs': 'Seek immediate care if you experience difficulty breathing, severe pain, or high fever above 103°F.'
+        }
+    }
+}
+
+# Safety keywords that trigger escalation
+SAFETY_KEYWORDS = {
+    'emergency': ['emergency', 'urgent', 'severe pain', 'chest pain', 'difficulty breathing',
+                  'can\'t breathe', 'heart attack', 'stroke', 'bleeding heavily', 'unconscious'],
+    'diagnosis': ['diagnose', 'do i have', 'is this', 'could this be', 'what disease'],
+    'dosage_change': ['change dose', 'increase dose', 'decrease dose', 'stop taking',
+                      'can i take more', 'double dose', 'skip dose'],
+    'substitute': ['substitute', 'replace medicine', 'alternative medicine', 'switch to',
+                   'instead of', 'can i take instead']
+}
+
+def get_ai_response(user_message, patient_context):
+    """
+    Generate AI response with safety guardrails
+    """
+    message_lower = user_message.lower()
+    
+    # Safety Check 1: Emergency keywords
+    for keyword in SAFETY_KEYWORDS['emergency']:
+        if keyword in message_lower:
+            return {
+                'response': '🚨 **EMERGENCY ALERT**: If you are experiencing a medical emergency, please call 911 immediately or go to the nearest emergency room. Do not wait for a response here.',
+                'type': 'emergency',
+                'escalate': True
+            }
+    
+    # Safety Check 2: Diagnosis requests
+    for keyword in SAFETY_KEYWORDS['diagnosis']:
+        if keyword in message_lower:
+            return {
+                'response': '⚠️ **Safety Notice**: I cannot provide medical diagnoses. Your current diagnosis of Acute Pharyngitis was made by Dr. Sarah Johnson. If you have concerns about new symptoms or your condition, please contact Dr. Johnson directly at the clinic.',
+                'type': 'safety_warning',
+                'escalate': True
+            }
+    
+    # Safety Check 3: Dosage changes
+    for keyword in SAFETY_KEYWORDS['dosage_change']:
+        if keyword in message_lower:
+            return {
+                'response': '⚠️ **Safety Notice**: For your safety, I cannot advise on changing medication dosages. Your current prescriptions were carefully determined by Dr. Sarah Johnson. Please contact Dr. Johnson before making any changes to your medication regimen.',
+                'type': 'safety_warning',
+                'escalate': True
+            }
+    
+    # Safety Check 4: Medicine substitution
+    for keyword in SAFETY_KEYWORDS['substitute']:
+        if keyword in message_lower:
+            return {
+                'response': '⚠️ **Safety Notice**: I cannot recommend substituting or changing your prescribed medications. Please consult Dr. Sarah Johnson before making any medication changes, especially considering your allergy to Penicillin.',
+                'type': 'safety_warning',
+                'escalate': True
+            }
+    
+    # Feature 3: Dietary Advice
+    if any(word in message_lower for word in ['diet', 'food', 'eat', 'drink', 'nutrition', 'meal']):
+        condition = patient_context['current_health_status']['active_diagnoses'][0]['condition'].lower()
+        if condition in MEDICAL_KNOWLEDGE_BASE['conditions']:
+            dietary_advice = MEDICAL_KNOWLEDGE_BASE['conditions'][condition]['dietary_advice']
+            advice_text = '\n'.join([f"• {advice}" for advice in dietary_advice])
+            return {
+                'response': f'**Dietary Recommendations for {patient_context["current_health_status"]["active_diagnoses"][0]["condition"]}:**\n\n{advice_text}\n\nThese recommendations are based on your current diagnosis and medications. Always follow Dr. Sarah Johnson\'s specific dietary instructions.',
+                'type': 'dietary_advice',
+                'escalate': False
+            }
+    
+    # Feature 2: Medication Q&A
+    if any(word in message_lower for word in ['medicine', 'medication', 'drug', 'pill', 'amoxicillin', 'paracetamol', 'vitamin', 'lisinopril']):
+        # Check for missed dose question
+        if 'missed' in message_lower or 'forgot' in message_lower:
+            return {
+                'response': '**Missed Dose Information:**\n\nIf you missed a dose of Amoxicillin:\n• Take it as soon as you remember\n• If it\'s almost time for your next dose, skip the missed dose\n• Do NOT double up on doses\n• Continue with your regular schedule\n\nFor other medications, please contact Dr. Sarah Johnson for specific guidance.',
+                'type': 'medication_info',
+                'escalate': False
+            }
+        
+        # General medication information
+        for med_key, med_info in MEDICAL_KNOWLEDGE_BASE['medications'].items():
+            if med_key in message_lower:
+                return {
+                    'response': f'**{med_info["name"]}**\n\n**Purpose:** {med_info["purpose"]}\n\n**Dosage:** {med_info["dosage"]}\n\n**Precautions:** {med_info["precautions"]}\n\n**Important:** {med_info["interactions"]}',
+                    'type': 'medication_info',
+                    'escalate': False
+                }
+        
+        # General medication response
+        return {
+            'response': 'I can provide information about your current medications: Amoxicillin, Vitamin D3, and Lisinopril. Which medication would you like to know more about?',
+            'type': 'medication_info',
+            'escalate': False
+        }
+    
+    # Symptom inquiry
+    if any(word in message_lower for word in ['symptom', 'sore throat', 'fever', 'pain', 'swallow', 'throat']):
+        return {
+            'response': f'**Your Current Symptoms:**\n\nBased on your diagnosis of Acute Pharyngitis, you are experiencing:\n• {", ".join(patient_context["current_health_status"]["active_symptoms"])}\n\nThese symptoms should improve within 7-10 days with your current treatment. If symptoms worsen or you develop new concerning symptoms, please contact Dr. Sarah Johnson.',
+            'type': 'symptom_info',
+            'escalate': False
+        }
+    
+    # Default helpful response
+    return {
+        'response': 'I\'m here to help answer questions about:\n\n• Your medications (Amoxicillin, Vitamin D3, Lisinopril)\n• Dietary recommendations for Acute Pharyngitis\n• Your current symptoms and treatment\n• General post-consultation care\n\nWhat would you like to know more about?\n\n*For medical emergencies, call 911. For changes to your treatment plan, contact Dr. Sarah Johnson.*',
+        'type': 'general',
+        'escalate': False
+    }
 
 @app.route('/')
 def index():
@@ -98,6 +275,38 @@ def appointments():
 def profile():
     return render_template('profile.html',
                          patient_profile=patient_profile)
+
+@app.route('/assistant')
+def assistant():
+    return render_template('assistant.html',
+                         patient_profile=patient_profile)
+
+@app.route('/api/chat', methods=['POST'])
+def chat():
+    try:
+        data = request.get_json()
+        user_message = data.get('message', '').strip()
+        
+        if not user_message:
+            return jsonify({
+                'success': False,
+                'message': 'Message cannot be empty'
+            }), 400
+        
+        # Get AI response with patient context
+        ai_response = get_ai_response(user_message, patient_profile)
+        
+        return jsonify({
+            'success': True,
+            'response': ai_response['response'],
+            'type': ai_response['type'],
+            'escalate': ai_response['escalate']
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error processing request: {str(e)}'
+        }), 500
 
 @app.route('/api/book', methods=['POST'])
 def book_appointment():

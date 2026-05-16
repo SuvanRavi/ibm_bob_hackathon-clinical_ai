@@ -22,6 +22,7 @@
                 <a href="/" class="nav-link">Schedule</a>
                 <a href="{{ url_for('appointments') }}" class="nav-link">My Appointments</a>
                 <a href="{{ url_for('profile') }}" class="nav-link active">Profile</a>
+                <a href="{{ url_for('assistant') }}" class="nav-link">AI Assistant</a>
             </nav>
         </div>
     </header>
@@ -173,6 +174,58 @@
                                         <p class="no-data">No current medications</p>
                                     {% endif %}
                                 </div>
+                            </div>
+                        </section>
+
+                        <!-- Current Health Status -->
+                        <section class="card health-status-card">
+                            <h3 class="card-title">Current Health Status</h3>
+                            
+                            <!-- Active Diagnoses -->
+                            {% if patient_profile.current_health_status.active_diagnoses %}
+                            <div class="medical-section">
+                                <h4 class="medical-section-title">Active Conditions</h4>
+                                <div class="diagnoses-list">
+                                    {% for diagnosis in patient_profile.current_health_status.active_diagnoses %}
+                                    <div class="diagnosis-item">
+                                        <div class="diagnosis-header">
+                                            <div class="diagnosis-icon">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M9 11L12 14L22 4M21 12V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                </svg>
+                                            </div>
+                                            <div class="diagnosis-content">
+                                                <div class="diagnosis-name">{{ diagnosis.condition }}</div>
+                                                <div class="diagnosis-meta">
+                                                    <span class="badge-status">{{ diagnosis.status }}</span>
+                                                    <span class="diagnosis-date">Diagnosed: {{ diagnosis.diagnosed_date }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Active Symptoms -->
+                            {% if patient_profile.current_health_status.active_symptoms %}
+                            <div class="medical-section">
+                                <h4 class="medical-section-title">Active Symptoms</h4>
+                                <div class="symptoms-container">
+                                    {% for symptom in patient_profile.current_health_status.active_symptoms %}
+                                    <span class="tag-symptom">{{ symptom }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- AI Context Note -->
+                            <div class="ai-context-note">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M13 16H12V12H11M12 8H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                AI Assistant will use this context for personalized medical advice
                             </div>
                         </section>
 
