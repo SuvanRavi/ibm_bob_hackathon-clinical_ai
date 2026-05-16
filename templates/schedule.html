@@ -76,11 +76,11 @@
                                     </div>
                                     <div class="detail-row">
                                         <span class="detail-label">Doctor:</span>
-                                        <span class="detail-value">Dr. Sarah Johnson</span>
+                                        <span id="selected-doctor" class="detail-value">-</span>
                                     </div>
                                     <div class="detail-row">
                                         <span class="detail-label">Specialty:</span>
-                                        <span class="detail-value">General Practitioner</span>
+                                        <span id="selected-specialty" class="detail-value">-</span>
                                     </div>
                                 </div>
                                 <button id="confirm-booking" class="btn btn-primary">Confirm Booking</button>
@@ -197,6 +197,44 @@
         const availableSlots = JSON.parse(document.getElementById('available-slots-data').textContent);
         let selectedDate = null;
         let selectedTime = null;
+        let selectedDoctor = null;
+        let doctorsData = {};
+
+        // Fetch doctors data on page load
+        async function loadDoctors() {
+            try {
+                const response = await fetch('/api/doctors');
+                const data = await response.json();
+                if (data.success && data.doctors) {
+                    // Store doctors by ID for easy lookup
+                    data.doctors.forEach(doctor => {
+                        doctorsData[doctor.doctor_id] = doctor;
+                    });
+                    // Set default doctor (first one)
+                    selectedDoctor = data.doctors[0];
+                    updateDoctorDisplay();
+                }
+            } catch (error) {
+                console.error('Error loading doctors:', error);
+                // Fallback to default
+                selectedDoctor = {
+                    doctor_id: 'D001',
+                    name: 'Dr. Meredith Grey',
+                    specialty: 'General Practitioner'
+                };
+                updateDoctorDisplay();
+            }
+        }
+
+        function updateDoctorDisplay() {
+            if (selectedDoctor) {
+                document.getElementById('selected-doctor').textContent = selectedDoctor.name;
+                document.getElementById('selected-specialty').textContent = selectedDoctor.specialty;
+            }
+        }
+
+        // Load doctors when page loads
+        loadDoctors();
 
         // Date selection handler
         document.getElementById('appointment-date').addEventListener('change', function(e) {
@@ -273,7 +311,8 @@
                 },
                 body: JSON.stringify({
                     date: selectedDate,
-                    time: selectedTime
+                    time: selectedTime,
+                    doctor_id: selectedDoctor ? selectedDoctor.doctor_id : 'D001'
                 })
             })
             .then(response => response.json())
