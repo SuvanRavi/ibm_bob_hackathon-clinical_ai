@@ -54,7 +54,41 @@
                     </svg>
                 </div>
                 <div class="disclaimer-text">
-                    <strong>Important:</strong> This AI provides information based on your doctor's notes and your current diagnosis of <strong>Acute Pharyngitis</strong>. For medical emergencies, call 911 immediately. For changes to your treatment, contact Dr. Sarah Johnson.
+                    <strong>Important:</strong> This AI provides information based on your doctor's notes and your current diagnosis of <strong>{{ patient_profile.current_health_status.active_diagnoses[0].condition }}</strong>. For medical emergencies, call 911 immediately. For changes to your treatment, contact {{ patient_profile.primary_doctor.name }}.
+                </div>
+            </div>
+
+            <!-- Current Context Sidebar -->
+            <div class="context-sidebar">
+                <h3 class="context-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M13 16H12V12H11M12 8H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Current Context
+                </h3>
+                <div class="context-grid">
+                    <div class="context-item">
+                        <div class="context-label">Patient</div>
+                        <div class="context-value">{{ patient_profile.name }}</div>
+                    </div>
+                    <div class="context-item">
+                        <div class="context-label">Active Diagnosis</div>
+                        <div class="context-value">{{ patient_profile.current_health_status.active_diagnoses[0].condition }}</div>
+                        <div class="context-meta">{{ patient_profile.current_health_status.active_diagnoses[0].status }}</div>
+                    </div>
+                    <div class="context-item">
+                        <div class="context-label">Primary Doctor</div>
+                        <div class="context-value">{{ patient_profile.primary_doctor.name }}</div>
+                        <div class="context-meta">{{ patient_profile.primary_doctor.specialty }}</div>
+                    </div>
+                    <div class="context-item">
+                        <div class="context-label">Current Medications</div>
+                        <div class="context-medications">
+                            {% for medication in medication_reminders %}
+                            <span class="context-med-tag">{{ medication.medication }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -73,8 +107,10 @@
                             <div class="message-bubble ai-bubble">
                                 <p>Hello {{ patient_profile.name }}! I'm your AI Health Assistant. I can help answer questions about:</p>
                                 <ul>
-                                    <li>Your medications (Amoxicillin, Vitamin D3, Lisinopril)</li>
-                                    <li>Dietary recommendations for your Acute Pharyngitis</li>
+                                    {% for medication in medication_reminders %}
+                                    <li>{{ medication.medication }}{% if not loop.last %}, {% endif %}</li>
+                                    {% endfor %}
+                                    <li>Dietary recommendations for your {{ patient_profile.current_health_status.active_diagnoses[0].condition }}</li>
                                     <li>Your current symptoms and treatment</li>
                                     <li>General post-consultation care</li>
                                 </ul>

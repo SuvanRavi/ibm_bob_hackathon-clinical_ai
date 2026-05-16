@@ -60,6 +60,11 @@ patient_profile = {
     'blood_group': 'O+',
     'contact_number': '+1 (555) 123-4567',
     'email': 'john.anderson@email.com',
+    'primary_doctor': {
+        'name': 'Dr. Sarah Johnson',
+        'specialty': 'General Practitioner',
+        'contact': '+1 (555) 234-5678'
+    },
     'allergies': ['Penicillin', 'Peanuts', 'Latex'],
     'current_medications': [
         'Amoxicillin 500mg - Twice daily',
@@ -74,7 +79,7 @@ patient_profile = {
     'current_health_status': {
         'active_diagnoses': [
             {
-                'condition': 'Acute Pharyngitis',
+                'condition': 'Ligna',
                 'status': 'Under Treatment',
                 'diagnosed_date': '2026-05-15'
             }
@@ -126,7 +131,7 @@ MEDICAL_KNOWLEDGE_BASE = {
     },
     'conditions': {
         'acute pharyngitis': {
-            'name': 'Acute Pharyngitis',
+            'name': 'Sugondese',
             'description': 'Inflammation of the throat (pharynx), commonly known as a sore throat, often caused by bacterial infection.',
             'symptoms': 'Sore throat, difficulty swallowing, fever, swollen lymph nodes.',
             'treatment': 'Antibiotics (Amoxicillin), rest, hydration, and pain relievers.',
@@ -173,8 +178,10 @@ def get_ai_response(user_message, patient_context):
     # Safety Check 2: Diagnosis requests
     for keyword in SAFETY_KEYWORDS['diagnosis']:
         if keyword in message_lower:
+            doctor_name = patient_context.get('primary_doctor', {}).get('name', 'your doctor')
+            current_diagnosis = patient_context['current_health_status']['active_diagnoses'][0]['condition']
             return {
-                'response': '⚠️ **Safety Notice**: I cannot provide medical diagnoses. Your current diagnosis of Acute Pharyngitis was made by Dr. Sarah Johnson. If you have concerns about new symptoms or your condition, please contact Dr. Johnson directly at the clinic.',
+                'response': f'⚠️ **Safety Notice**: I cannot provide medical diagnoses. Your current diagnosis of {current_diagnosis} was made by {doctor_name}. If you have concerns about new symptoms or your condition, please contact {doctor_name} directly at the clinic.',
                 'type': 'safety_warning',
                 'escalate': True
             }
@@ -182,8 +189,9 @@ def get_ai_response(user_message, patient_context):
     # Safety Check 3: Dosage changes
     for keyword in SAFETY_KEYWORDS['dosage_change']:
         if keyword in message_lower:
+            doctor_name = patient_context.get('primary_doctor', {}).get('name', 'your doctor')
             return {
-                'response': '⚠️ **Safety Notice**: For your safety, I cannot advise on changing medication dosages. Your current prescriptions were carefully determined by Dr. Sarah Johnson. Please contact Dr. Johnson before making any changes to your medication regimen.',
+                'response': f'⚠️ **Safety Notice**: For your safety, I cannot advise on changing medication dosages. Your current prescriptions were carefully determined by {doctor_name}. Please contact {doctor_name} before making any changes to your medication regimen.',
                 'type': 'safety_warning',
                 'escalate': True
             }
@@ -191,8 +199,11 @@ def get_ai_response(user_message, patient_context):
     # Safety Check 4: Medicine substitution
     for keyword in SAFETY_KEYWORDS['substitute']:
         if keyword in message_lower:
+            doctor_name = patient_context.get('primary_doctor', {}).get('name', 'your doctor')
+            allergies = ', '.join(patient_context.get('allergies', []))
+            allergy_note = f', especially considering your allergies to {allergies}' if allergies else ''
             return {
-                'response': '⚠️ **Safety Notice**: I cannot recommend substituting or changing your prescribed medications. Please consult Dr. Sarah Johnson before making any medication changes, especially considering your allergy to Penicillin.',
+                'response': f'⚠️ **Safety Notice**: I cannot recommend substituting or changing your prescribed medications. Please consult {doctor_name} before making any medication changes{allergy_note}.',
                 'type': 'safety_warning',
                 'escalate': True
             }
@@ -200,21 +211,26 @@ def get_ai_response(user_message, patient_context):
     # Feature 3: Dietary Advice
     if any(word in message_lower for word in ['diet', 'food', 'eat', 'drink', 'nutrition', 'meal']):
         condition = patient_context['current_health_status']['active_diagnoses'][0]['condition'].lower()
+        doctor_name = patient_context.get('primary_doctor', {}).get('name', 'your doctor')
         if condition in MEDICAL_KNOWLEDGE_BASE['conditions']:
             dietary_advice = MEDICAL_KNOWLEDGE_BASE['conditions'][condition]['dietary_advice']
             advice_text = '\n'.join([f"• {advice}" for advice in dietary_advice])
             return {
-                'response': f'**Dietary Recommendations for {patient_context["current_health_status"]["active_diagnoses"][0]["condition"]}:**\n\n{advice_text}\n\nThese recommendations are based on your current diagnosis and medications. Always follow Dr. Sarah Johnson\'s specific dietary instructions.',
+                'response': f'**Dietary Recommendations for {patient_context["current_health_status"]["active_diagnoses"][0]["condition"]}:**\n\n{advice_text}\n\nThese recommendations are based on your current diagnosis and medications. Always follow {doctor_name}\'s specific dietary instructions.',
                 'type': 'dietary_advice',
                 'escalate': False
             }
     
     # Feature 2: Medication Q&A
     if any(word in message_lower for word in ['medicine', 'medication', 'drug', 'pill', 'amoxicillin', 'paracetamol', 'vitamin', 'lisinopril']):
+        doctor_name = patient_context.get('primary_doctor', {}).get('name', 'your doctor')
+        medications = patient_context.get('current_medications', [])
+        
         # Check for missed dose question
         if 'missed' in message_lower or 'forgot' in message_lower:
+            primary_med = medications[0] if medications else 'your medication'
             return {
-                'response': '**Missed Dose Information:**\n\nIf you missed a dose of Amoxicillin:\n• Take it as soon as you remember\n• If it\'s almost time for your next dose, skip the missed dose\n• Do NOT double up on doses\n• Continue with your regular schedule\n\nFor other medications, please contact Dr. Sarah Johnson for specific guidance.',
+                'response': f'**Missed Dose Information:**\n\nIf you missed a dose of {primary_med}:\n• Take it as soon as you remember\n• If it\'s almost time for your next dose, skip the missed dose\n• Do NOT double up on doses\n• Continue with your regular schedule\n\nFor other medications, please contact {doctor_name} for specific guidance.',
                 'type': 'medication_info',
                 'escalate': False
             }
@@ -229,23 +245,32 @@ def get_ai_response(user_message, patient_context):
                 }
         
         # General medication response
+        med_list = ', '.join([med.split(' - ')[0] for med in medications]) if medications else 'your medications'
         return {
-            'response': 'I can provide information about your current medications: Amoxicillin, Vitamin D3, and Lisinopril. Which medication would you like to know more about?',
+            'response': f'I can provide information about your current medications: {med_list}. Which medication would you like to know more about?',
             'type': 'medication_info',
             'escalate': False
         }
     
     # Symptom inquiry
     if any(word in message_lower for word in ['symptom', 'sore throat', 'fever', 'pain', 'swallow', 'throat']):
+        doctor_name = patient_context.get('primary_doctor', {}).get('name', 'your doctor')
+        diagnosis = patient_context['current_health_status']['active_diagnoses'][0]['condition']
+        symptoms = patient_context['current_health_status']['active_symptoms']
         return {
-            'response': f'**Your Current Symptoms:**\n\nBased on your diagnosis of Acute Pharyngitis, you are experiencing:\n• {", ".join(patient_context["current_health_status"]["active_symptoms"])}\n\nThese symptoms should improve within 7-10 days with your current treatment. If symptoms worsen or you develop new concerning symptoms, please contact Dr. Sarah Johnson.',
+            'response': f'**Your Current Symptoms:**\n\nBased on your diagnosis of {diagnosis}, you are experiencing:\n• {", ".join(symptoms)}\n\nThese symptoms should improve within 7-10 days with your current treatment. If symptoms worsen or you develop new concerning symptoms, please contact {doctor_name}.',
             'type': 'symptom_info',
             'escalate': False
         }
     
     # Default helpful response
+    doctor_name = patient_context.get('primary_doctor', {}).get('name', 'your doctor')
+    medications = patient_context.get('current_medications', [])
+    diagnosis = patient_context['current_health_status']['active_diagnoses'][0]['condition']
+    med_list = ', '.join([med.split(' - ')[0] for med in medications]) if medications else 'your medications'
+    
     return {
-        'response': 'I\'m here to help answer questions about:\n\n• Your medications (Amoxicillin, Vitamin D3, Lisinopril)\n• Dietary recommendations for Acute Pharyngitis\n• Your current symptoms and treatment\n• General post-consultation care\n\nWhat would you like to know more about?\n\n*For medical emergencies, call 911. For changes to your treatment plan, contact Dr. Sarah Johnson.*',
+        'response': f'I\'m here to help answer questions about:\n\n• Your medications ({med_list})\n• Dietary recommendations for {diagnosis}\n• Your current symptoms and treatment\n• General post-consultation care\n\nWhat would you like to know more about?\n\n*For medical emergencies, call 911. For changes to your treatment plan, contact {doctor_name}.*',
         'type': 'general',
         'escalate': False
     }
@@ -279,7 +304,8 @@ def profile():
 @app.route('/assistant')
 def assistant():
     return render_template('assistant.html',
-                         patient_profile=patient_profile)
+                         patient_profile=patient_profile,
+                         medication_reminders=medication_reminders)
 
 @app.route('/api/chat', methods=['POST'])
 def chat():

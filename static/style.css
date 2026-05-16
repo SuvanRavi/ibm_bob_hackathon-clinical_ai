@@ -1797,3 +1797,92 @@ h4 {
         display: none;
     }
 }
+
+/* ===================================
+   Context Sidebar Styles
+   =================================== */
+.context-sidebar {
+    background-color: var(--color-surface-card);
+    border: 1px solid var(--color-hairline);
+    border-left: 3px solid var(--color-accent-teal);
+    border-radius: var(--rounded-lg);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+.context-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-ink);
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--color-hairline);
+}
+
+.context-title svg {
+    color: var(--color-accent-teal);
+}
+
+.context-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.context-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.context-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.context-value {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-ink);
+}
+
+.context-meta {
+    font-size: 13px;
+    color: var(--color-muted);
+}
+
+.context-medications {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+}
+
+.context-med-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    background-color: rgba(93, 184, 166, 0.1);
+    color: var(--color-accent-teal);
+    border-radius: var(--rounded-pill);
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid var(--color-accent-teal);
+}
+
+/* Responsive Context Sidebar */
+@media (max-width: 768px) {
+    .context-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+    }
+    
+    .context-sidebar {
+        padding: var(--spacing-md);
+    }
+}
