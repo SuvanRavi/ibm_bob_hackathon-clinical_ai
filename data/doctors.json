@@ -1,0 +1,26 @@
+{
+  "D001": {
+    "doctor_id": "D001",
+    "name": "Dr. Meredith Grey",
+    "specialty": "General Practitioner",
+    "available_days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+  },
+  "D002": {
+    "doctor_id": "D002",
+    "name": "Dr. Richard Webber",
+    "specialty": "Cardiologist",
+    "available_days": ["Monday", "Wednesday", "Friday"]
+  },
+  "D003": {
+    "doctor_id": "D003",
+    "name": "Dr. Emily Rodriguez",
+    "specialty": "Dermatologist",
+    "available_days": ["Tuesday", "Thursday", "Saturday"]
+  },
+  "D004": {
+    "doctor_id": "D004",
+    "name": "Dr. James Wilson",
+    "specialty": "Pediatrician",
+    "available_days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+  }
+}
