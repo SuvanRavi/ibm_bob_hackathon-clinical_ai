@@ -2,12 +2,13 @@ from flask import Flask, render_template, request, jsonify
 from datetime import datetime, timedelta
 import requests
 import json
+import os
 
 app = Flask(__name__)
 
 # Hugging Face API Configuration
-HF_API_TOKEN = "insert API token"  # Replace with your actual token
-API_URL = "https://api-inference.huggingface.co/models/BioMistral/BioMistral-7B"
+HF_API_TOKEN = os.environ.get('OPENAI_API_KEY')  # Replace with your actual token
+API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
 
 # Mock data for available time slots
 available_slots = {
