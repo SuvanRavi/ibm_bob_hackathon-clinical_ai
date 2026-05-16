@@ -7,7 +7,7 @@ import os
 app = Flask(__name__)
 
 # Hugging Face API Configuration
-HF_API_TOKEN = os.environ.get('OPENAI_API_KEY')  # Replace with your actual token
+HF_API_TOKEN = os.environ.get('HF_API_TOKEN')  # Replace with your actual token
 API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
 
 # Mock data for available time slots
