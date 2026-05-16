@@ -1,0 +1,17 @@
+# Core Flask dependencies
+Flask==3.0.0
+Werkzeug==3.0.1
+
+# Machine Learning and NLP
+transformers==4.36.2
+torch==2.1.2
+sentence-transformers==2.2.2
+accelerate==0.25.0
+
+# Vector storage and similarity search
+faiss-cpu==1.7.4
+numpy==1.24.3
+
+# Additional utilities
+python-dotenv==1.0.0
+requests==2.31.0

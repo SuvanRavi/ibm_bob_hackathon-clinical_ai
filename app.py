@@ -1,30 +1,25 @@
 from flask import Flask, render_template, request, jsonify
 from datetime import datetime, timedelta
+import logging
+from medical_chatbot import BioMistralChatbot, PatientContext
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-# Initialize Local LLM (TinyLlama - smaller, faster, more reliable)
-print("Loading TinyLlama model... This may take a few minutes on first run.")
-pipe = None
-try:
-    import torch
-    from transformers import pipeline
-    
-    # Use TinyLlama - much more reliable and faster for hackathons
-    pipe = pipeline(
-        "text-generation",
-        model="TinyLlama/TinyLlama-1.1B-Chat-v1.0",
-        device_map="auto"
-    )
-    print("✓ TinyLlama model loaded successfully!")
-    print("  Model size: ~1.1B parameters (~2GB)")
-except ImportError as e:
-    print(f"⚠️ Warning: Required packages not installed: {e}")
-    print("   Please run: pip install torch transformers accelerate")
-except Exception as e:
-    print(f"⚠️ Warning: Could not load TinyLlama model: {e}")
-    print(f"   Error type: {type(e).__name__}")
-    print("   The app will continue with built-in knowledge base responses.")
+# Initialize BioMistral Chatbot
+print("=" * 60)
+print("🚀 Clinical AI Assistant - BioMistral Local Inference")
+print("=" * 60)
+print("🤖 Loading BioMistral-7B model for medical Q&A...")
+print("⚕️  Patient-grounded responses with RAG")
+print("🔒 Multi-layer safety validation enabled")
+print("=" * 60)
+
+# Global chatbot instance
+medical_chatbot = None
 
 # Mock data for available time slots
 available_slots = {
@@ -198,74 +193,40 @@ DANGEROUS_RESPONSE_KEYWORDS = [
     'go to hospital'
 ]
 
-def query_ai_model(prompt):
-    """
-    Query the local TinyLlama model
-    Returns the AI-generated text or an error message
-    """
-    if pipe is None:
-        return {
-            'error': True,
-            'message': "Local AI model is not available. Please ensure transformers and torch are installed."
-        }
+def initialize_chatbot():
+    """Initialize the BioMistral chatbot with patient data"""
+    global medical_chatbot
     
     try:
-        # Construct prompt in TinyLlama chat format
-        formatted_prompt = f"<|system|>\nYou are a helpful medical assistant.</s>\n<|user|>\n{prompt}</s>\n<|assistant|>\n"
+        logger.info("Initializing BioMistral chatbot...")
+        medical_chatbot = BioMistralChatbot()
         
-        # Generate response
-        outputs = pipe(
-            formatted_prompt,
-            max_new_tokens=200,
-            temperature=0.7,
-            top_p=0.9,
-            do_sample=True,
-            return_full_text=False,
-            pad_token_id=pipe.tokenizer.eos_token_id
-        )
+        # Load the model
+        medical_chatbot.load_model()
         
-        # Extract generated text
-        if outputs and len(outputs) > 0:
-            generated_text = outputs[0]['generated_text']
-            
-            # Clean up the response (remove special tokens and extra whitespace)
-            generated_text = generated_text.replace('</s>', '').replace('<|assistant|>', '').strip()
-            
-            # If response is too short or empty, return error
-            if len(generated_text) < 10:
-                return {
-                    'error': True,
-                    'message': "Model generated an incomplete response."
-                }
-            
-            return {
-                'error': False,
-                'text': generated_text
+        # Prepare patient data for RAG
+        patient_records = [
+            {
+                'patient_id': '12345',
+                'patient_name': patient_profile['name'],
+                'patient_age': patient_profile['age'],
+                'diagnosis': patient_profile['current_health_status']['active_diagnoses'][0]['condition'],
+                'appointment_details': 'Follow-up scheduled',
+                'symptom': ', '.join(patient_profile['current_health_status']['active_symptoms']),
+                'prescription': '\n'.join(patient_profile['current_medications']),
+                'dietary_restrictions': 'Avoid spicy and acidic foods'
             }
+        ]
         
-        return {
-            'error': True,
-            'message': "Model did not generate a response."
-        }
+        # Initialize RAG with patient data
+        medical_chatbot.initialize_patient_data(patient_records)
+        
+        logger.info("✅ BioMistral chatbot initialized successfully")
+        return True
         
     except Exception as e:
-        return {
-            'error': True,
-            'message': f"Error generating response: {str(e)}"
-        }
-
-def check_response_safety(ai_response):
-    """
-    Check if AI response contains dangerous keywords
-    Returns (is_safe, warning_message)
-    """
-    response_lower = ai_response.lower()
-    
-    for keyword in DANGEROUS_RESPONSE_KEYWORDS:
-        if keyword in response_lower:
-            return False, "⚠️ **Safety Override**: This response has been flagged for containing potentially dangerous medical advice. Please consult your doctor directly for any changes to your treatment plan."
-    
-    return True, None
+        logger.error(f"❌ Error initializing chatbot: {e}")
+        return False
 
 def get_ai_response(user_message, patient_context):
     """
@@ -416,6 +377,9 @@ def assistant():
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
+    """Handle chat requests using BioMistral chatbot"""
+    global medical_chatbot
+    
     try:
         data = request.get_json()
         user_message = data.get('message', '').strip()
@@ -426,11 +390,24 @@ def chat():
                 'message': 'Message cannot be empty'
             }), 400
         
+        # Check if chatbot is initialized
+        if medical_chatbot is None or not medical_chatbot.is_loaded:
+            logger.warning("Chatbot not initialized, attempting to initialize...")
+            if not initialize_chatbot():
+                # Fallback to rule-based response
+                ai_response = get_ai_response(user_message, patient_profile)
+                return jsonify({
+                    'success': True,
+                    'response': ai_response['response'],
+                    'type': ai_response.get('type', 'fallback'),
+                    'escalate': ai_response.get('escalate', False)
+                })
+        
         # First, check safety guardrails (emergency, diagnosis, dosage changes)
         ai_response = get_ai_response(user_message, patient_profile)
         
         # If safety check triggered, return immediately without calling AI
-        if ai_response['escalate']:
+        if ai_response.get('escalate', False):
             return jsonify({
                 'success': True,
                 'response': ai_response['response'],
@@ -438,75 +415,32 @@ def chat():
                 'escalate': ai_response['escalate']
             })
         
-        # If safety checks passed, construct prompt for AI model
-        diagnosis = patient_profile['current_health_status']['active_diagnoses'][0]['condition']
-        symptoms = ', '.join(patient_profile['current_health_status']['active_symptoms'])
-        medications = '\n'.join([f"- {med}" for med in patient_profile['current_medications']])
-        doctor_name = patient_profile['primary_doctor']['name']
-        allergies = ', '.join(patient_profile['allergies'])
+        # Use BioMistral chatbot for response generation
+        logger.info(f"Processing query with BioMistral: {user_message[:50]}...")
+        result = medical_chatbot.generate_response(user_message)
         
-        # Construct strict system prompt
-        system_prompt = f"""You are a medical assistant for a patient. Provide helpful, accurate information based ONLY on the context below.
-
-Patient Context:
-- Name: {patient_profile['name']}
-- Diagnosis: {diagnosis}
-- Symptoms: {symptoms}
-- Current Medications:
-{medications}
-- Allergies: {allergies}
-- Primary Doctor: {doctor_name}
-
-IMPORTANT RULES:
-1. Base your answer ONLY on the patient context and general medical knowledge
-2. Do NOT diagnose new conditions
-3. Do NOT recommend changing medication dosages
-4. Do NOT recommend stopping or substituting medications
-5. For emergencies, tell the patient to call 911 or go to the ER
-6. Keep responses concise (2-3 paragraphs maximum)
-7. Always remind the patient to consult {doctor_name} for medical decisions
-
-Patient Question: {user_message}
-
-Provide a helpful, concise answer:"""
-
-        # Query the local AI model
-        ai_result = query_ai_model(system_prompt)
-        
-        # Handle model errors
-        if ai_result.get('error'):
+        if result.get('success', False):
             return jsonify({
                 'success': True,
-                'response': f"⚠️ Local AI Model Unavailable: {ai_result['message']}\n\nIn the meantime, I can help with:\n• Medication information from your records\n• Dietary advice for {diagnosis}\n• General symptom information\n\nPlease try your question again, or contact {doctor_name} directly.",
-                'type': 'error',
-                'escalate': False
+                'response': result['response'],
+                'type': 'biomistral_generated',
+                'escalate': False,
+                'grounded': result.get('grounded', False),
+                'patient_context': result.get('patient_context')
             })
-        
-        # Extract AI response
-        ai_text = ai_result['text'].strip()
-        
-        # Safety check on AI response
-        is_safe, warning = check_response_safety(ai_text)
-        
-        if not is_safe:
+        else:
+            # Fallback to rule-based response if BioMistral fails
+            logger.warning(f"BioMistral failed: {result.get('error', 'Unknown error')}")
+            fallback_response = get_ai_response(user_message, patient_profile)
             return jsonify({
                 'success': True,
-                'response': warning,
-                'type': 'safety_warning',
-                'escalate': True
+                'response': fallback_response['response'],
+                'type': 'fallback',
+                'escalate': fallback_response.get('escalate', False)
             })
-        
-        # Add disclaimer to AI response
-        final_response = f"{ai_text}\n\n---\n*Generated by Local AI. Always consult {doctor_name} for medical advice.*"
-        
-        return jsonify({
-            'success': True,
-            'response': final_response,
-            'type': 'ai_generated',
-            'escalate': False
-        })
         
     except Exception as e:
+        logger.error(f"Error in chat endpoint: {e}")
         return jsonify({
             'success': False,
             'message': f'Error processing request: {str(e)}'
@@ -589,6 +523,11 @@ def cancel_appointment(appointment_index):
         }), 500
 
 if __name__ == '__main__':
+    # Initialize the chatbot on startup
+    logger.info("Starting Flask application...")
+    initialize_chatbot()
+    
+    # Run the Flask app
     app.run(debug=True, port=5000)
 
-# Made with Bob
+# Made with Bob - Enhanced with BioMistral Local Inference
