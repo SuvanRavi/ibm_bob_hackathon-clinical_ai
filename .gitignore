@@ -11,7 +11,6 @@ ENV/
 
 # Model checkpoints and data
 model/checkpoints/
-data/
 *.pt
 *.pth
 *.ckpt
