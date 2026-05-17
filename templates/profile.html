@@ -224,9 +224,8 @@
         window.location.href = '/login';
     }
 
-    // 3. NEW: Automatically fetch logged-in profile data on page load
+    // 3. Automatically fetch logged-in profile data on page load
     async function loadCurrentPatientProfile() {
-        // Safe hide the old multi-user dropdown button container while keeping header layouts completely identical
         const dropdownBtn = document.getElementById('profile-dropdown-btn');
         if (dropdownBtn) {
             dropdownBtn.style.display = 'none';
@@ -257,10 +256,71 @@
                 
                 document.getElementById('val-email').textContent = patient.email || 'None registered';
                 document.getElementById('val-contact').textContent = patient.contact_number || 'None registered';
+                document.getElementById('val-emergency').textContent = patient.emergency_contact || 'None registered';
                 
                 // Set default field parameters if you trigger edit actions
                 if(document.getElementById('edit-email')) document.getElementById('edit-email').value = patient.email || '';
                 if(document.getElementById('edit-contact')) document.getElementById('edit-contact').value = patient.contact_number || '';
+                if(document.getElementById('edit-emergency')) document.getElementById('edit-emergency').value = patient.emergency_contact || '';
+
+                // --- MAP KNOWN ALLERGIES ---
+                const allergiesContainer = document.getElementById('display-allergies');
+                if (allergiesContainer) {
+                    allergiesContainer.innerHTML = ''; // Clear out the placeholder paragraph
+                    
+                    let allergies = patient.allergies || [];
+                    // Handle string split case if allergies is sent as a raw comma string
+                    if (typeof allergies === 'string') {
+                        allergies = allergies.split(',').map(item => item.trim()).filter(Boolean);
+                    }
+
+                    if (allergies.length > 0) {
+                        allergies.forEach(allergy => {
+                            const badge = document.createElement('span');
+                            badge.className = 'allergy-badge';
+                            badge.style.display = 'inline-block';
+                            badge.style.backgroundColor = '#fee2e2';
+                            badge.style.color = '#991b1b';
+                            badge.style.padding = '4px 10px';
+                            badge.style.borderRadius = '20px';
+                            badge.style.fontSize = '12px';
+                            badge.style.marginRight = '6px';
+                            badge.style.marginBottom = '6px';
+                            badge.style.fontWeight = '500';
+                            badge.textContent = allergy;
+                            allergiesContainer.appendChild(badge);
+                        });
+                    } else {
+                        allergiesContainer.innerHTML = '<p class="no-data">No known allergies recorded.</p>';
+                    }
+                }
+
+                // --- MAP CURRENT MEDICATIONS ---
+                const medicationsContainer = document.getElementById('display-medications');
+                if (medicationsContainer) {
+                    medicationsContainer.innerHTML = ''; // Clear out the placeholder paragraph
+                    
+                    const prescription = patient.prescription || [];
+                    if (prescription.length > 0) {
+                        prescription.forEach(med => {
+                            const medItem = document.createElement('div');
+                            medItem.className = 'medication-item';
+                            medItem.style.padding = '8px 0';
+                            medItem.style.borderBottom = '1px solid var(--color-hairline-soft)';
+                            medItem.innerHTML = `
+                                <strong style="color: var(--color-ink); display: block; font-size: 14px;">${med.medication || 'Medication'}</strong>
+                                <span style="color: #666; font-size: 12px;">Dosage: ${med.dosage || '--'}</span>
+                            `;
+                            medicationsContainer.appendChild(medItem);
+                        });
+                        // Remove the final border styling item cleanly
+                        if (medicationsContainer.lastChild) {
+                            medicationsContainer.lastChild.style.borderBottom = 'none';
+                        }
+                    } else {
+                        medicationsContainer.innerHTML = '<p class="no-data">No active prescriptions.</p>';
+                    }
+                }
             }
         } catch (err) {
             console.error("Error loading secure patient details:", err);

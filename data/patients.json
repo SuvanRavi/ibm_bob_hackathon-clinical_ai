@@ -103,5 +103,26 @@
         "notes": "2"
       }
     ]
+  },
+  "P006": {
+    "patient_id": "P006",
+    "patient_name": "Steven",
+    "patient_age": 40,
+    "blood_group": "O-",
+    "allergies": [
+      "Peanut"
+    ],
+    "symptom": "Hives",
+    "diagnosis": "Rash on skin",
+    "appointment_details": "12/5/2027",
+    "dietary_restrictions": "No dairy food",
+    "prescription": [
+      {
+        "medication": "Penicilin",
+        "dosage": "2",
+        "duration": "2 days",
+        "notes": "Before food"
+      }
+    ]
   }
 }
