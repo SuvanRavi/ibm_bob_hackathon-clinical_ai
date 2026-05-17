@@ -1,0 +1,46 @@
+{
+  "A001": {
+    "appointment_id": "A001",
+    "patient_id": "P001",
+    "doctor_id": "D001",
+    "date": "2026-05-17",
+    "time": "10:00 AM",
+    "status": "cancelled",
+    "type": "follow-up",
+    "notes": "Follow-up for respiratory infection",
+    "booked_at": "2026-05-15 14:30:00"
+  },
+  "A002": {
+    "appointment_id": "A002",
+    "patient_id": "P003",
+    "doctor_id": "D002",
+    "date": "2026-05-19",
+    "time": "02:00 PM",
+    "status": "scheduled",
+    "type": "consultation",
+    "notes": "Blood pressure monitoring",
+    "booked_at": "2026-05-16 09:15:00"
+  },
+  "A003": {
+    "appointment_id": "A003",
+    "patient_id": "P001",
+    "doctor_id": "D001",
+    "date": "2026-05-10",
+    "time": "09:00 AM",
+    "status": "completed",
+    "type": "consultation",
+    "notes": "Initial consultation for cough",
+    "booked_at": "2026-05-08 16:45:00"
+  },
+  "A004": {
+    "appointment_id": "A004",
+    "patient_id": "P001",
+    "doctor_id": "D001",
+    "date": "2026-05-18",
+    "time": "10:00 AM",
+    "status": "scheduled",
+    "type": "consultation",
+    "notes": "Scheduled via web portal",
+    "booked_at": "2026-05-17 03:46:06"
+  }
+}

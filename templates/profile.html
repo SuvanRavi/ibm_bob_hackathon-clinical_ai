@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+<<<<<<< HEAD
     <!-- Navigation Header -->
     <header class="navbar">
         <div class="container">
@@ -31,14 +32,94 @@
     <main class="main-content">
         <div class="container">
             <!-- Page Title -->
+=======
+    <header class="navbar">
+    <div class="container">
+        <div class="nav-brand">
+            <svg class="logo-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+                <rect x="14" y="8" width="4" height="16" fill="#2563eb"/>
+                <rect x="8" y="14" width="16" height="4" fill="#2563eb"/>
+                <circle cx="16" cy="16" r="14" stroke="#2563eb" stroke-width="2" fill="none"/>
+            </svg>
+            <h1>MedAssistant</h1>
+        </div>
+        <nav class="nav-links" id="main-nav">
+            </nav>
+        
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div style="position: relative;">
+                <svg id="profile-dropdown-btn" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="cursor: pointer; color: var(--color-ink); margin-top: 5px;">
+                    <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                
+                <div id="patient-dropdown" style="display: none; position: absolute; right: 0; top: 40px; background: white; border: 1px solid var(--color-hairline); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 220px; z-index: 2000; max-height: 300px; overflow-y: auto;">
+                    </div>
+            </div>
+            <button class="btn btn-secondary" id="logout-btn"
+                style="font-size:13px;height:34px;padding:0 14px;"
+                onclick="logout()">
+                Log out
+            </button>
+        </div>
+    </div>
+</header>
+
+<script>
+    (function () {
+        const role = localStorage.getItem('userRole');
+        if (!role) { window.location.href = '/login'; return; }
+        const currentPath = window.location.pathname;
+        if (role === 'patient' && currentPath === '/docprofile') { window.location.href = '/'; return; }
+        if (role === 'doctor' && currentPath === '/') { window.location.href = '/docprofile'; return; }
+
+        const nav = document.getElementById('main-nav');
+        const patientLinks = `
+            <a href="/" class="nav-link ${currentPath === '/' ? 'active' : ''}">Schedule</a>
+            <a href="/appointments" class="nav-link ${currentPath === '/appointments' ? 'active' : ''}">My Appointments</a>
+            <a href="/profile" class="nav-link ${currentPath === '/profile' ? 'active' : ''}">Profile</a>
+        `;
+        const doctorLinks = `
+            <a href="/docprofile" class="nav-link ${currentPath === '/docprofile' ? 'active' : ''}">Doctor Profile</a>
+            <a href="/patientinfo" class="nav-link ${currentPath === '/patientinfo' ? 'active' : ''}">Patient Info</a>
+        `;
+        nav.innerHTML = role === 'doctor' ? doctorLinks : patientLinks;
+    })();
+    
+    async function logout() {
+        try {
+            await fetch('/api/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
+        
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userName');
+        window.location.href = '/login';
+    }
+</script>
+
+    <main class="main-content">
+        <div class="container">
+>>>>>>> a50b2e810c74a7918ed719ee04306251dbecb18b
             <div class="page-header">
                 <h2>My Profile</h2>
                 <p class="subtitle">Manage your personal and medical information</p>
             </div>
 
+<<<<<<< HEAD
             <!-- Profile Content -->
             <div class="profile-layout">
                 <!-- Profile Header Card -->
+=======
+            <div class="profile-layout">
+>>>>>>> a50b2e810c74a7918ed719ee04306251dbecb18b
                 <section class="card profile-header-card">
                     <div class="profile-header-content">
                         <div class="profile-avatar">
@@ -48,6 +129,7 @@
                             </svg>
                         </div>
                         <div class="profile-header-info">
+<<<<<<< HEAD
                             <h3 class="profile-name">{{ patient_profile.name }}</h3>
                             <div class="profile-meta">
                                 <span class="profile-meta-item">
@@ -63,21 +145,37 @@
                                         <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                     </svg>
                                     Blood Group: {{ patient_profile.blood_group }}
+=======
+                            <h3 class="profile-name" id="display-name">Select a Patient from Top Right</h3>
+                            <div class="profile-meta">
+                                <span class="profile-meta-item" id="display-age">
+                                    -- years old
+                                </span>
+                                <span class="profile-meta-item" id="display-blood">
+                                    Blood Group: --
+>>>>>>> a50b2e810c74a7918ed719ee04306251dbecb18b
                                 </span>
                             </div>
                         </div>
                     </div>
                 </section>
 
+<<<<<<< HEAD
                 <!-- Two Column Layout -->
                 <div class="content-grid">
                     <!-- Left Column -->
                     <div class="profile-left-column">
                         <!-- Personal Information -->
+=======
+                <div class="content-grid">
+                    <div class="profile-left-column">
+                        
+>>>>>>> a50b2e810c74a7918ed719ee04306251dbecb18b
                         <section class="card">
                             <h3 class="card-title">Personal Information</h3>
                             <div class="info-list">
                                 <div class="info-item">
+<<<<<<< HEAD
                                     <div class="info-icon">
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                             <path d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -111,11 +209,34 @@
                                     <div class="info-content">
                                         <div class="info-label">Blood Group</div>
                                         <div class="info-value">{{ patient_profile.blood_group }}</div>
+=======
+                                    <div class="info-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z"/><path d="M22 6L12 13L2 6"/></svg></div>
+                                    <div class="info-content" style="width:100%">
+                                        <div class="info-label">Email Address</div>
+                                        <div class="info-value" id="val-email">--</div>
+                                        <input type="email" id="edit-email" class="form-select" style="display:none; margin-top:5px; height: 35px; width: 100%;">
+                                    </div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92V19.92C22.0011 20.1985 21.9441 20.4742 21.8325 20.7293C21.7209 20.9845 21.5573 21.2136 21.3521 21.4019C21.1468 21.5901 20.9046 21.7335 20.6407 21.8227C20.3769 21.9119 20.0974 21.9451 19.82 21.92C16.7428 21.5856 13.787 20.5341 11.19 18.85C8.77382 17.3147 6.72533 15.2662 5.18999 12.85C3.49997 10.2412 2.44824 7.27099 2.11999 4.18C2.095 3.90347 2.12787 3.62476 2.21649 3.36162C2.30512 3.09849 2.44756 2.85669 2.63476 2.65162C2.82196 2.44655 3.0498 2.28271 3.30379 2.17052C3.55777 2.05833 3.83233 2.00026 4.10999 2H7.10999C7.5953 1.99522 8.06579 2.16708 8.43376 2.48353C8.80173 2.79999 9.04207 3.23945 9.10999 3.72C9.23662 4.68007 9.47144 5.62273 9.80999 6.53C9.94454 6.88792 9.97366 7.27691 9.8939 7.65088C9.81415 8.02485 9.62886 8.36811 9.35999 8.64L8.08999 9.91C9.51355 12.4135 11.5864 14.4864 14.09 15.91L15.36 14.64C15.6319 14.3711 15.9751 14.1858 16.3491 14.1061C16.7231 14.0263 17.1121 14.0555 17.47 14.19C18.3773 14.5286 19.3199 14.7634 20.28 14.89C20.7658 14.9585 21.2094 15.2032 21.5265 15.5775C21.8437 15.9518 22.0122 16.4296 22 16.92Z"/></svg></div>
+                                    <div class="info-content" style="width:100%">
+                                        <div class="info-label">Contact Number</div>
+                                        <div class="info-value" id="val-contact">--</div>
+                                        <input type="text" id="edit-contact" class="form-select" style="display:none; margin-top:5px; height: 35px; width: 100%;">
+                                    </div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7L12 12L22 7L12 2Z"/><path d="M2 17L12 22L22 17"/><path d="M2 12L12 17L22 12"/></svg></div>
+                                    <div class="info-content">
+                                        <div class="info-label">Blood Group</div>
+                                        <div class="info-value" id="display-blood-info">--</div>
+>>>>>>> a50b2e810c74a7918ed719ee04306251dbecb18b
                                     </div>
                                 </div>
                             </div>
                         </section>
 
+<<<<<<< HEAD
                         <!-- Emergency Contact -->
                         <section class="card emergency-contact-card">
                             <h3 class="card-title">Emergency Contact</h3>
@@ -129,11 +250,22 @@
                                     <div class="emergency-name">{{ patient_profile.emergency_contact.name }}</div>
                                     <div class="emergency-relationship">{{ patient_profile.emergency_contact.relationship }}</div>
                                     <div class="emergency-phone">{{ patient_profile.emergency_contact.phone }}</div>
+=======
+                        <section class="card emergency-contact-card">
+                            <h3 class="card-title">Emergency Contact</h3>
+                            <div class="emergency-contact-content">
+                                <div class="emergency-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92V19.92C22.0011 20.1985 21.9441 20.4742 21.8325 20.7293C21.7209 20.9845 21.5573 21.2136 21.3521 21.4019C21.1468 21.5901 20.9046 21.7335 20.6407 21.8227C20.3769 21.9119 20.0974 21.9451 19.82 21.92C16.7428 21.5856 13.787 20.5341 11.19 18.85C8.77382 17.3147 6.72533 15.2662 5.18999 12.85C3.49997 10.2412 2.44824 7.27099 2.11999 4.18C2.095 3.90347 2.12787 3.62476 2.21649 3.36162C2.30512 3.09849 2.44756 2.85669 2.63476 2.65162C2.82196 2.44655 3.0498 2.28271 3.30379 2.17052C3.55777 2.05833 3.83233 2.00026 4.10999 2H7.10999C7.5953 1.99522 8.06579 2.16708 8.43376 2.48353C8.80173 2.79999 9.04207 3.23945 9.10999 3.72C9.23662 4.68007 9.47144 5.62273 9.80999 6.53C9.94454 6.88792 9.97366 7.27691 9.8939 7.65088C9.81415 8.02485 9.62886 8.36811 9.35999 8.64L8.08999 9.91C9.51355 12.4135 11.5864 14.4864 14.09 15.91L15.36 14.64C15.6319 14.3711 15.9751 14.1858 16.3491 14.1061C16.7231 14.0263 17.1121 14.0555 17.47 14.19C18.3773 14.5286 19.3199 14.7634 20.28 14.89C20.7658 14.9585 21.2094 15.2032 21.5265 15.5775C21.8437 15.9518 22.0122 16.4296 22 16.92Z"/></svg></div>
+                                <div class="emergency-info" style="width:100%">
+                                    <div class="emergency-relationship" style="margin-bottom: 5px;">Primary Emergency Contact Number</div>
+                                    <div class="emergency-phone" id="val-emergency">--</div>
+                                    <input type="text" id="edit-emergency" class="form-select" style="display:none; margin-top:5px; height: 35px; width: 100%;">
+>>>>>>> a50b2e810c74a7918ed719ee04306251dbecb18b
                                 </div>
                             </div>
                         </section>
                     </div>
 
+<<<<<<< HEAD
                     <!-- Right Column -->
                     <div class="profile-right-column">
                         <!-- Medical Information -->
@@ -173,10 +305,28 @@
                                     {% else %}
                                         <p class="no-data">No current medications</p>
                                     {% endif %}
+=======
+                    <div class="profile-right-column">
+                        <section class="card">
+                            <h3 class="card-title">Medical Information</h3>
+                            
+                            <div class="medical-section">
+                                <h4 class="medical-section-title">Known Allergies</h4>
+                                <div class="allergies-container" id="display-allergies">
+                                    <p class="no-data">Select a patient</p>
+                                </div>
+                            </div>
+
+                            <div class="medical-section">
+                                <h4 class="medical-section-title">Current Medications</h4>
+                                <div class="medications-list" id="display-medications">
+                                    <p class="no-data">Select a patient</p>
+>>>>>>> a50b2e810c74a7918ed719ee04306251dbecb18b
                                 </div>
                             </div>
                         </section>
 
+<<<<<<< HEAD
                         <!-- Current Health Status -->
                         <section class="card health-status-card">
                             <h3 class="card-title">Current Health Status</h3>
@@ -234,6 +384,12 @@
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 <path d="M18.5 2.50001C18.8978 2.10219 19.4374 1.87869 20 1.87869C20.5626 1.87869 21.1022 2.10219 21.5 2.50001C21.8978 2.89784 22.1213 3.4374 22.1213 4.00001C22.1213 4.56262 21.8978 5.10219 21.5 5.50001L12 15L8 16L9 12L18.5 2.50001Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+=======
+                        <button class="btn btn-secondary edit-profile-btn" id="edit-profile-btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13"/>
+                                <path d="M18.5 2.50001C18.8978 2.10219 19.4374 1.87869 20 1.87869C20.5626 1.87869 21.1022 2.10219 21.5 2.50001C21.8978 2.89784 22.1213 3.4374 22.1213 4.00001C22.1213 4.56262 21.8978 5.10219 21.5 5.50001L12 15L8 16L9 12L18.5 2.50001Z"/>
+>>>>>>> a50b2e810c74a7918ed719ee04306251dbecb18b
                             </svg>
                             Edit Profile
                         </button>
@@ -243,12 +399,212 @@
         </div>
     </main>
 
+<<<<<<< HEAD
     <!-- JavaScript for interactivity -->
     <script>
         // Edit profile button handler (placeholder)
         document.querySelector('.edit-profile-btn').addEventListener('click', function() {
             alert('Edit Profile functionality coming soon!');
         });
+=======
+    <script>
+        let currentPatientId = null;
+        let isEditing = false;
+        let allPatients = {};
+
+        // 1. Toggle Dropdown Menu
+        document.getElementById('profile-dropdown-btn').addEventListener('click', () => {
+            const dd = document.getElementById('patient-dropdown');
+            dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#profile-dropdown-btn') && !e.target.closest('#patient-dropdown')) {
+                document.getElementById('patient-dropdown').style.display = 'none';
+            }
+        });
+
+        // 2. Fetch and Load Patients into Dropdown
+        async function loadPatientsDropdown() {
+            try {
+                const res = await fetch('/api/all-patients');
+                const data = await res.json();
+                
+                if (data.success) {
+                    allPatients = data.patients;
+                    const dd = document.getElementById('patient-dropdown');
+                    dd.innerHTML = '';
+                    
+                    for (const [pid, p] of Object.entries(allPatients)) {
+                        const row = document.createElement('div');
+                        row.style.padding = '12px 15px';
+                        row.style.cursor = 'pointer';
+                        row.style.borderBottom = '1px solid var(--color-hairline)';
+                        row.style.fontSize = '14px';
+                        row.textContent = `${pid} - ${p.patient_name || 'Unknown'}`;
+                        row.onmouseover = () => row.style.backgroundColor = 'var(--color-surface-soft)';
+                        row.onmouseout = () => row.style.backgroundColor = 'white';
+                        row.onclick = () => {
+                            selectPatient(pid);
+                            dd.style.display = 'none';
+                        };
+                        dd.appendChild(row);
+                    }
+                    
+                    // Auto-select the first available patient on load
+                    const pids = Object.keys(allPatients);
+                    if (pids.length > 0) {
+                        selectPatient(pids[0]);
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load patients for dropdown", err);
+            }
+        }
+
+        // 3. Populate Page with Selected Patient's Data
+        async function selectPatient(pid) {
+            currentPatientId = pid;
+            const p = allPatients[pid];
+            
+            // Populate Basic Header Data
+            document.getElementById('display-name').textContent = p.patient_name || 'Unknown Patient';
+            document.getElementById('display-age').innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><path d="M8 7V3M16 7V3M7 11H17M5 21H19C20.1046 21 21 20.1046 21 19V7C21 5.89543 20.1046 5 19 5H5C3.89543 5 3 5.89543 3 7V19C3 20.1046 3.89543 21 5 21Z"/></svg>
+                ${p.patient_age || '--'} years old
+            `;
+            document.getElementById('display-blood').innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><path d="M12 2L2 7L12 12L22 7L12 2Z"/><path d="M2 17L12 22L22 17"/><path d="M2 12L12 17L22 12"/></svg>
+                Blood Group: ${p.blood_group || '--'}
+            `;
+            document.getElementById('display-blood-info').textContent = p.blood_group || '--';
+
+            // Populate Medical Data
+            const allergiesBox = document.getElementById('display-allergies');
+            if (p.allergies && p.allergies.length > 0) {
+                allergiesBox.innerHTML = p.allergies.map(a => `<span class="tag-allergy">${a}</span>`).join('');
+            } else {
+                allergiesBox.innerHTML = '<p class="no-data">No known allergies</p>';
+            }
+
+            const medsBox = document.getElementById('display-medications');
+            if (p.prescription && p.prescription.length > 0) {
+                medsBox.innerHTML = p.prescription.map(m => `
+                    <div class="medication-item">
+                        <div class="medication-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5C3 15 3 12.5 4.5 11L11 4.5C12.5 3 15 3 16.5 4.5C18 6 18 8.5 16.5 10L10 16.5C8.5 18 6 18 4.5 16.5Z"/><path d="M13.5 6.5L17.5 10.5"/></svg></div>
+                        <div class="medication-text">${m.medication} - ${m.dosage || ''}</div>
+                    </div>
+                `).join('');
+            } else {
+                medsBox.innerHTML = '<p class="no-data">No current medications</p>';
+            }
+
+            // Fetch Additional Contact Data from new JSON
+            try {
+                const cRes = await fetch(`/api/patient-contact/${pid}`);
+                const cData = await cRes.json();
+                const contact = cData.contact || {};
+                
+                // Email
+                document.getElementById('val-email').textContent = contact.email || 'Not provided';
+                document.getElementById('edit-email').value = contact.email || '';
+                
+                // Contact Number
+                document.getElementById('val-contact').textContent = contact.contact_number || 'Not provided';
+                document.getElementById('edit-contact').value = contact.contact_number || '';
+                
+                // Emergency Contact
+                document.getElementById('val-emergency').textContent = contact.emergency_contact || 'Not provided';
+                document.getElementById('edit-emergency').value = contact.emergency_contact || '';
+                
+            } catch(e) {
+                console.error("Failed fetching contact data", e);
+            }
+        }
+
+        // 4. Edit & Save Profile Logic
+        document.getElementById('edit-profile-btn').addEventListener('click', async function() {
+            if (!currentPatientId) {
+                alert('Please select a patient from the dropdown first.');
+                return;
+            }
+            
+            if (!isEditing) {
+                // ENABLING EDIT MODE: Toggle Texts to Inputs
+                isEditing = true;
+                
+                // Change Button Styling
+                this.classList.remove('btn-secondary');
+                this.classList.add('btn-primary');
+                this.innerHTML = `
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    Save Profile
+                `;
+
+                // Toggle Display
+                document.getElementById('val-email').style.display = 'none';
+                document.getElementById('edit-email').style.display = 'block';
+                
+                document.getElementById('val-contact').style.display = 'none';
+                document.getElementById('edit-contact').style.display = 'block';
+                
+                document.getElementById('val-emergency').style.display = 'none';
+                document.getElementById('edit-emergency').style.display = 'block';
+
+            } else {
+                // SAVING DATA: Dispatch payload and toggle back to view mode
+                const payload = {
+                    patient_id: currentPatientId,
+                    email: document.getElementById('edit-email').value.trim(),
+                    contact_number: document.getElementById('edit-contact').value.trim(),
+                    emergency_contact: document.getElementById('edit-emergency').value.trim()
+                };
+                
+                try {
+                    const res = await fetch('/api/patient-contact', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    if (res.ok) {
+                        // Update display texts
+                        document.getElementById('val-email').textContent = payload.email || 'Not provided';
+                        document.getElementById('val-contact').textContent = payload.contact_number || 'Not provided';
+                        document.getElementById('val-emergency').textContent = payload.emergency_contact || 'Not provided';
+                        
+                        // Switch back to view mode
+                        isEditing = false;
+                        this.classList.remove('btn-primary');
+                        this.classList.add('btn-secondary');
+                        this.innerHTML = `
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13"/><path d="M18.5 2.50001C18.8978 2.10219 19.4374 1.87869 20 1.87869C20.5626 1.87869 21.1022 2.10219 21.5 2.50001C21.8978 2.89784 22.1213 3.4374 22.1213 4.00001C22.1213 4.56262 21.8978 5.10219 21.5 5.50001L12 15L8 16L9 12L18.5 2.50001Z"/></svg>
+                            Edit Profile
+                        `;
+                        
+                        // Toggle UI Visibility
+                        document.getElementById('val-email').style.display = 'block';
+                        document.getElementById('edit-email').style.display = 'none';
+                        
+                        document.getElementById('val-contact').style.display = 'block';
+                        document.getElementById('edit-contact').style.display = 'none';
+                        
+                        document.getElementById('val-emergency').style.display = 'block';
+                        document.getElementById('edit-emergency').style.display = 'none';
+                    } else {
+                        alert('Failed to save profile updates.');
+                    }
+                } catch (e) {
+                    console.error('Error saving data:', e);
+                    alert('Network error while saving profile.');
+                }
+            }
+        });
+
+        // Initialize Page
+        loadPatientsDropdown();
+>>>>>>> a50b2e810c74a7918ed719ee04306251dbecb18b
     </script>
 </body>
 </html>

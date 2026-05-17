@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedAssistant - Doctor Profile Setup</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header class="navbar">
+    <div class="container">
+        <div class="nav-brand">
+            <svg class="logo-icon" width="32" height="32" viewBox="0 0 32 32" fill="none">
+                <rect x="14" y="8" width="4" height="16" fill="#2563eb"/>
+                <rect x="8" y="14" width="16" height="4" fill="#2563eb"/>
+                <circle cx="16" cy="16" r="14" stroke="#2563eb" stroke-width="2" fill="none"/>
+            </svg>
+            <h1>MedAssistant</h1>
+        </div>
+        <nav class="nav-links" id="main-nav">
+            <!-- Populated by JS based on role -->
+        </nav>
+        <button class="btn btn-secondary" id="logout-btn"
+            style="font-size:13px;height:34px;padding:0 14px;"
+            onclick="logout()">
+            Log out
+        </button>
+    </div>
+</header>
+
+<script>
+    (function () {
+        const role = localStorage.getItem('userRole');
+
+        // If no role set, send to login
+        if (!role) {
+            window.location.href = '/login';
+            return;
+        }
+
+        const currentPath = window.location.pathname;
+
+        // Doctor-only page guard — patients can't access /docprofile
+        if (role === 'patient' && currentPath === '/docprofile') {
+            window.location.href = '/';
+            return;
+        }
+
+        // Patient-only page guard — doctors land on /docprofile only
+        if (role === 'doctor' && currentPath === '/') {
+            window.location.href = '/docprofile';
+            return;
+        }
+
+        const nav = document.getElementById('main-nav');
+
+        const patientLinks = `
+            <a href="/" class="nav-link ${currentPath === '/' ? 'active' : ''}">Schedule</a>
+            <a href="/appointments" class="nav-link ${currentPath === '/appointments' ? 'active' : ''}">My Appointments</a>
+            <a href="/profile" class="nav-link ${currentPath === '/profile' ? 'active' : ''}">Profile</a>
+        `;
+
+        const doctorLinks = `
+            <a href="/docprofile" class="nav-link ${currentPath === '/docprofile' ? 'active' : ''}">Doctor Profile</a>
+            <a href="/patientinfo" class="nav-link ${currentPath === '/patientinfo' ? 'active' : ''}">Patient Info</a>
+        `;
+
+        nav.innerHTML = role === 'doctor' ? doctorLinks : patientLinks;
+    })();
+
+    async function logout() {
+        try {
+            await fetch('/api/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
+        
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userName');
+        window.location.href = '/login';
+    }
+</script>
+
+<main class="main-content">
+    <div class="container">
+
+        <div class="page-header">
+            <h2>Manage Doctor Profile</h2>
+            <p class="subtitle">Update your professional details and consultation settings</p>
+        </div>
+
+        <div class="content-grid">
+
+            <!-- FORM -->
+            <section class="booking-section">
+                <div class="card">
+                    <h3 class="card-title">Professional Credentials</h3>
+
+                    <!-- Async form (NO Flask POST) -->
+                    <form id="profile-form">
+
+                        <div class="form-group">
+                            <label>Doctor ID</label>
+                            <input type="text" id="doctor_id" class="form-select" placeholder="e.g. D001">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" id="name" class="form-select" placeholder="e.g. Dr. John Doe">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Medical Specialty</label>
+                            <select id="specialty" class="form-select">
+                                <option value="">Select specialty</option>
+                                <option>General Practitioner</option>
+                                <option>Cardiologist</option>
+                                <option>Dermatologist</option>
+                                <option>Pediatrician</option>
+                                <option>Neurologist</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Years of Experience</label>
+                            <input type="number" id="experience" class="form-select">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Bio</label>
+                            <textarea id="bio" class="form-select" style="height:100px"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="width:100%;">
+                            Save Profile
+                        </button>
+
+                    </form>
+                </div>
+            </section>
+
+            <!-- LIVE PREVIEW -->
+            <!-- LIVE PREVIEW -->
+<aside class="reminders-section">
+
+    <div class="card">
+        <h3 class="card-title">Live Active Profile Card</h3>
+        <div class="appointment-item">
+            <div class="appointment-icon">🩺</div>
+            <div class="appointment-details">
+                <div id="preview-name" style="font-size:18px;font-weight:600;">No Name Configured</div>
+                <div id="preview-specialty" style="color:#2563eb;">Specialty Assignment Pending</div>
+                <p id="preview-bio" style="font-size:13px;color:#64748b;">Fill out the form to preview profile</p>
+                <div style="font-size:12px;color:#94a3b8;">
+                    ID: <span id="preview-id">N/A</span> |
+                    Exp: <span id="preview-exp">0</span> yrs
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ NEW: Saved cards render here -->
+    <div id="saved-cards-container"></div>
+
+</aside>
+
+        </div>
+    </div>
+</main>
+
+<!-- JS: LIVE PREVIEW + (API READY) -->
+<script>
+const doctor = { doctor_id: "", name: "", specialty: "", experience: "", bio: "" };
+
+// ✅ Load from localStorage on page load
+let savedProfiles = JSON.parse(localStorage.getItem('savedDoctorProfiles') || '[]');
+
+function updatePreview() {
+    doctor.doctor_id  = document.getElementById('doctor_id').value;
+    doctor.name       = document.getElementById('name').value;
+    doctor.specialty  = document.getElementById('specialty').value;
+    doctor.experience = document.getElementById('experience').value;
+    doctor.bio        = document.getElementById('bio').value;
+
+    document.getElementById('preview-name').textContent      = doctor.name      || "No Name Configured";
+    document.getElementById('preview-specialty').textContent = doctor.specialty  || "Specialty Assignment Pending";
+    document.getElementById('preview-bio').textContent       = doctor.bio        || "Fill out the form to preview profile";
+    document.getElementById('preview-id').textContent        = doctor.doctor_id  || "N/A";
+    document.getElementById('preview-exp').textContent       = doctor.experience || "0";
+}
+
+document.querySelectorAll("input, textarea, select")
+    .forEach(el => el.addEventListener("input", updatePreview));
+
+function saveToStorage() {
+    localStorage.setItem('savedDoctorProfiles', JSON.stringify(savedProfiles));
+}
+
+function renderSavedCards() {
+    const container = document.getElementById('saved-cards-container');
+    container.innerHTML = "";
+
+    savedProfiles.forEach((profile, index) => {
+        const card = document.createElement('div');
+        card.className = "card";
+        card.style.marginTop = "16px";
+        card.style.position  = "relative";
+
+        card.innerHTML = `
+            <button onclick="deleteCard(${index})" title="Delete profile"
+                style="position:absolute;top:12px;right:12px;background:#fee2e2;
+                       border:none;border-radius:6px;padding:4px 10px;cursor:pointer;
+                       color:#dc2626;font-size:12px;font-weight:600;">
+                ✕ Delete
+            </button>
+
+            <h3 class="card-title" style="font-size:13px;color:#94a3b8;margin-bottom:10px;">
+                Saved Profile
+            </h3>
+
+            <div class="appointment-item">
+                <div class="appointment-icon">🩺</div>
+                <div class="appointment-details">
+                    <div style="font-size:17px;font-weight:600;">
+                        ${profile.name || "No Name"}
+                    </div>
+                    <div style="color:#2563eb;font-size:14px;">
+                        ${profile.specialty || "No Specialty"}
+                    </div>
+                    <p style="font-size:13px;color:#64748b;margin:6px 0;">
+                        ${profile.bio || "No bio provided."}
+                    </p>
+                    <div style="font-size:12px;color:#94a3b8;">
+                        ID: ${profile.doctor_id || "N/A"} |
+                        Exp: ${profile.experience || "0"} yrs
+                    </div>
+                </div>
+            </div>
+        `;
+
+        container.appendChild(card);
+    });
+}
+
+function deleteCard(index) {
+    savedProfiles.splice(index, 1);
+    saveToStorage();       // ✅ persist deletion
+    renderSavedCards();
+}
+
+document.getElementById("profile-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    if (!doctor.name.trim()) {
+        alert("Please enter a name before saving.");
+        return;
+    }
+
+    savedProfiles.push({ ...doctor });
+    saveToStorage();       // ✅ persist new card
+    renderSavedCards();
+
+    document.getElementById('saved-cards-container')
+        .lastElementChild?.scrollIntoView({ behavior: 'smooth' });
+
+    // ─── Uncomment when Flask route is ready ───
+    // const res  = await fetch('/api/doctor-profile', {
+    //     method : 'POST',
+    //     headers: { 'Content-Type': 'application/json' },
+    //     body   : JSON.stringify(doctor)
+    // });
+    // const data = await res.json();
+});
+
+// ✅ Auto-populate form with session data on page load
+async function loadDoctorProfile() {
+    try {
+        const response = await fetch('/api/session');
+        const data = await response.json();
+        
+        if (data.authenticated && data.role === 'doctor' && data.profile) {
+            const profile = data.profile;
+            
+            // Auto-populate form fields
+            document.getElementById('doctor_id').value = profile.doctor_id || data.user_id || '';
+            document.getElementById('name').value = profile.name || '';
+            document.getElementById('specialty').value = profile.specialty || '';
+            document.getElementById('experience').value = profile.experience || '';
+            document.getElementById('bio').value = profile.bio || '';
+            
+            // Update preview
+            updatePreview();
+        }
+    } catch (error) {
+        console.error('Error loading doctor profile:', error);
+    }
+}
+
+// Load profile on page load
+loadDoctorProfile();
+
+// ✅ Render saved cards immediately on page load
+renderSavedCards();
+</script>
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedAssistant - Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="login-body">
+
+    <div class="login-wrapper">
+
+        <!-- Brand -->
+        <div class="login-brand">
+            <svg width="40" height="40" viewBox="0 0 32 32" fill="none">
+                <rect x="14" y="8" width="4" height="16" fill="#cc785c"/>
+                <rect x="8" y="14" width="16" height="4" fill="#cc785c"/>
+                <circle cx="16" cy="16" r="14" stroke="#cc785c" stroke-width="2" fill="none"/>
+            </svg>
+            <h1 class="login-brand-name">MedAssistant</h1>
+        </div>
+
+        <p class="login-tagline">Your personal clinical companion</p>
+
+        <!-- Login Card -->
+        <div class="login-card">
+
+            <div class="login-card-header">
+                <h2 class="login-card-title">Welcome back</h2>
+                <p class="login-card-subtitle">Sign in to continue</p>
+            </div>
+
+            <!-- Authentication Form -->
+            <form id="login-form" class="login-form">
+                
+                <!-- Error Message -->
+                <div id="error-message" class="error-message" style="display: none;"></div>
+
+                <!-- User ID Input -->
+                <div class="form-group">
+                    <label for="user_id" class="form-label">User ID</label>
+                    <input 
+                        type="text" 
+                        id="user_id" 
+                        name="user_id" 
+                        class="form-input" 
+                        placeholder="e.g., P001 or D001"
+                        required
+                        autocomplete="username"
+                    >
+                    <small class="form-hint">Enter P### for patients or D### for doctors</small>
+                </div>
+
+                <!-- Password Input -->
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        class="form-input" 
+                        placeholder="Enter your password"
+                        required
+                        autocomplete="current-password"
+                    >
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn btn-primary btn-block" id="login-btn">
+                    Sign In
+                </button>
+
+            </form>
+
+            <p class="login-disclaimer">
+                Demo credentials: P001/patient001 (Patient) or D001/doctor001 (Doctor)
+            </p>
+
+        </div>
+
+        <p class="login-footer">MedAssistant &copy; 2026 &mdash; Clinical Proof of Concept</p>
+
+    </div>
+
+    <script>
+        const loginForm = document.getElementById('login-form');
+        const errorMessage = document.getElementById('error-message');
+        const loginBtn = document.getElementById('login-btn');
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Clear previous errors
+            errorMessage.style.display = 'none';
+            errorMessage.textContent = '';
+            
+            // Disable button during submission
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Signing in...';
+
+            const userId = document.getElementById('user_id').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            try {
+                const response = await fetch('/api/authenticate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        password: password
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Store role in localStorage for navigation (backward compatibility)
+                    localStorage.setItem('userRole', data.role);
+                    localStorage.setItem('userId', data.user_id);
+                    localStorage.setItem('userName', data.name);
+                    
+                    // Redirect to appropriate page
+                    window.location.href = data.redirect_url;
+                } else {
+                    // Show error message
+                    errorMessage.textContent = data.message || 'Login failed. Please try again.';
+                    errorMessage.style.display = 'block';
+                    
+                    // Re-enable button
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Sign In';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                errorMessage.textContent = 'An error occurred. Please try again.';
+                errorMessage.style.display = 'block';
+                
+                // Re-enable button
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Sign In';
+            }
+        });
+    </script>
+
+    <style>
+        .login-form {
+            margin-top: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--color-ink);
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 15px;
+            border: 1.5px solid var(--color-hairline);
+            border-radius: 8px;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #cc785c;
+            box-shadow: 0 0 0 3px rgba(204, 120, 92, 0.1);
+        }
+
+        .form-hint {
+            display: block;
+            font-size: 12px;
+            color: var(--color-muted);
+            margin-top: 6px;
+        }
+
+        .btn-block {
+            width: 100%;
+            margin-top: 24px;
+        }
+
+        .error-message {
+            padding: 12px 16px;
+            background-color: #fee;
+            border: 1px solid #fcc;
+            border-radius: 8px;
+            color: #c33;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    </style>
+
+</body>
+</html>
