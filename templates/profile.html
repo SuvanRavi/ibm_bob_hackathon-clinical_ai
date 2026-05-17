@@ -186,203 +186,89 @@
         </div>
     </main>
 
-    <script>
-        let currentPatientId = null;
-        let isEditing = false;
-        let allPatients = {};
+ <script>
+    // 1. Navigation setup based on role (Leaves visual presentation untouched)
+    (function () {
+        const role = localStorage.getItem('userRole');
+        if (!role) { window.location.href = '/login'; return; }
+        const currentPath = window.location.pathname;
+        if (role === 'patient' && currentPath === '/docprofile') { window.location.href = '/'; return; }
+        if (role === 'doctor' && currentPath === '/') { window.location.href = '/docprofile'; return; }
 
-        // 1. Toggle Dropdown Menu
-        document.getElementById('profile-dropdown-btn').addEventListener('click', () => {
-            const dd = document.getElementById('patient-dropdown');
-            dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
-        });
+        const nav = document.getElementById('main-nav');
+        const patientLinks = `
+            <a href="/" class="nav-link ${currentPath === '/' ? 'active' : ''}">Schedule</a>
+            <a href="/appointments" class="nav-link ${currentPath === '/appointments' ? 'active' : ''}">My Appointments</a>
+            <a href="/profile" class="nav-link ${currentPath === '/profile' ? 'active' : ''}">Profile</a>
+        `;
+        const doctorLinks = `
+            <a href="/docprofile" class="nav-link ${currentPath === '/docprofile' ? 'active' : ''}">Doctor Profile</a>
+            <a href="/patientinfo" class="nav-link ${currentPath === '/patientinfo' ? 'active' : ''}">Patient Info</a>
+        `;
+        nav.innerHTML = role === 'doctor' ? doctorLinks : patientLinks;
+    })();
+    
+    // 2. Clear application state securely on logout
+    async function logout() {
+        try {
+            await fetch('/api/logout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userName');
+        window.location.href = '/login';
+    }
 
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('#profile-dropdown-btn') && !e.target.closest('#patient-dropdown')) {
-                document.getElementById('patient-dropdown').style.display = 'none';
-            }
-        });
-
-        // 2. Fetch and Load Patients into Dropdown
-        async function loadPatientsDropdown() {
-            try {
-                const res = await fetch('/api/all-patients');
-                const data = await res.json();
-                
-                if (data.success) {
-                    allPatients = data.patients;
-                    const dd = document.getElementById('patient-dropdown');
-                    dd.innerHTML = '';
-                    
-                    for (const [pid, p] of Object.entries(allPatients)) {
-                        const row = document.createElement('div');
-                        row.style.padding = '12px 15px';
-                        row.style.cursor = 'pointer';
-                        row.style.borderBottom = '1px solid var(--color-hairline)';
-                        row.style.fontSize = '14px';
-                        row.textContent = `${pid} - ${p.patient_name || 'Unknown'}`;
-                        row.onmouseover = () => row.style.backgroundColor = 'var(--color-surface-soft)';
-                        row.onmouseout = () => row.style.backgroundColor = 'white';
-                        row.onclick = () => {
-                            selectPatient(pid);
-                            dd.style.display = 'none';
-                        };
-                        dd.appendChild(row);
-                    }
-                    
-                    // Auto-select the first available patient on load
-                    const pids = Object.keys(allPatients);
-                    if (pids.length > 0) {
-                        selectPatient(pids[0]);
-                    }
-                }
-            } catch (err) {
-                console.error("Failed to load patients for dropdown", err);
-            }
+    // 3. NEW: Automatically fetch logged-in profile data on page load
+    async function loadCurrentPatientProfile() {
+        // Safe hide the old multi-user dropdown button container while keeping header layouts completely identical
+        const dropdownBtn = document.getElementById('profile-dropdown-btn');
+        if (dropdownBtn) {
+            dropdownBtn.style.display = 'none';
         }
 
-        // 3. Populate Page with Selected Patient's Data
-        async function selectPatient(pid) {
-            currentPatientId = pid;
-            const p = allPatients[pid];
-            
-            // Populate Basic Header Data
-            document.getElementById('display-name').textContent = p.patient_name || 'Unknown Patient';
-            document.getElementById('display-age').innerHTML = `
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><path d="M8 7V3M16 7V3M7 11H17M5 21H19C20.1046 21 21 20.1046 21 19V7C21 5.89543 20.1046 5 19 5H5C3.89543 5 3 5.89543 3 7V19C3 20.1046 3.89543 21 5 21Z"/></svg>
-                ${p.patient_age || '--'} years old
-            `;
-            document.getElementById('display-blood').innerHTML = `
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><path d="M12 2L2 7L12 12L22 7L12 2Z"/><path d="M2 17L12 22L22 17"/><path d="M2 12L12 17L22 12"/></svg>
-                Blood Group: ${p.blood_group || '--'}
-            `;
-            document.getElementById('display-blood-info').textContent = p.blood_group || '--';
+        try {
+            // Read session state from backend
+            const sessionRes = await fetch('/api/session');
+            const sessionData = await sessionRes.json();
 
-            // Populate Medical Data
-            const allergiesBox = document.getElementById('display-allergies');
-            if (p.allergies && p.allergies.length > 0) {
-                allergiesBox.innerHTML = p.allergies.map(a => `<span class="tag-allergy">${a}</span>`).join('');
-            } else {
-                allergiesBox.innerHTML = '<p class="no-data">No known allergies</p>';
-            }
-
-            const medsBox = document.getElementById('display-medications');
-            if (p.prescription && p.prescription.length > 0) {
-                medsBox.innerHTML = p.prescription.map(m => `
-                    <div class="medication-item">
-                        <div class="medication-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5C3 15 3 12.5 4.5 11L11 4.5C12.5 3 15 3 16.5 4.5C18 6 18 8.5 16.5 10L10 16.5C8.5 18 6 18 4.5 16.5Z"/><path d="M13.5 6.5L17.5 10.5"/></svg></div>
-                        <div class="medication-text">${m.medication} - ${m.dosage || ''}</div>
-                    </div>
-                `).join('');
-            } else {
-                medsBox.innerHTML = '<p class="no-data">No current medications</p>';
-            }
-
-            // Fetch Additional Contact Data from new JSON
-            try {
-                const cRes = await fetch(`/api/patient-contact/${pid}`);
-                const cData = await cRes.json();
-                const contact = cData.contact || {};
-                
-                // Email
-                document.getElementById('val-email').textContent = contact.email || 'Not provided';
-                document.getElementById('edit-email').value = contact.email || '';
-                
-                // Contact Number
-                document.getElementById('val-contact').textContent = contact.contact_number || 'Not provided';
-                document.getElementById('edit-contact').value = contact.contact_number || '';
-                
-                // Emergency Contact
-                document.getElementById('val-emergency').textContent = contact.emergency_contact || 'Not provided';
-                document.getElementById('edit-emergency').value = contact.emergency_contact || '';
-                
-            } catch(e) {
-                console.error("Failed fetching contact data", e);
-            }
-        }
-
-        // 4. Edit & Save Profile Logic
-        document.getElementById('edit-profile-btn').addEventListener('click', async function() {
-            if (!currentPatientId) {
-                alert('Please select a patient from the dropdown first.');
+            if (!sessionData.authenticated) {
+                window.location.href = '/login';
                 return;
             }
+
+            // Request details for the active patient context
+            const profileRes = await fetch('/api/session'); 
+            const data = await profileRes.json();
             
-            if (!isEditing) {
-                // ENABLING EDIT MODE: Toggle Texts to Inputs
-                isEditing = true;
+            if (data.authenticated && data.profile) {
+                const patient = data.profile;
                 
-                // Change Button Styling
-                this.classList.remove('btn-secondary');
-                this.classList.add('btn-primary');
-                this.innerHTML = `
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                    Save Profile
-                `;
-
-                // Toggle Display
-                document.getElementById('val-email').style.display = 'none';
-                document.getElementById('edit-email').style.display = 'block';
+                // Map values cleanly into your exact ID tags without disturbing text styles or structures
+                document.getElementById('display-name').textContent = patient.patient_name || 'Patient Profile';
+                document.getElementById('display-age').textContent = `${patient.patient_age || '--'} years old`;
+                document.getElementById('display-blood').textContent = `Blood Group: ${patient.blood_group || '--'}`;
+                document.getElementById('display-blood-info').textContent = patient.blood_group || '--';
                 
-                document.getElementById('val-contact').style.display = 'none';
-                document.getElementById('edit-contact').style.display = 'block';
+                document.getElementById('val-email').textContent = patient.email || 'None registered';
+                document.getElementById('val-contact').textContent = patient.contact_number || 'None registered';
                 
-                document.getElementById('val-emergency').style.display = 'none';
-                document.getElementById('edit-emergency').style.display = 'block';
-
-            } else {
-                // SAVING DATA: Dispatch payload and toggle back to view mode
-                const payload = {
-                    patient_id: currentPatientId,
-                    email: document.getElementById('edit-email').value.trim(),
-                    contact_number: document.getElementById('edit-contact').value.trim(),
-                    emergency_contact: document.getElementById('edit-emergency').value.trim()
-                };
-                
-                try {
-                    const res = await fetch('/api/patient-contact', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify(payload)
-                    });
-                    
-                    if (res.ok) {
-                        // Update display texts
-                        document.getElementById('val-email').textContent = payload.email || 'Not provided';
-                        document.getElementById('val-contact').textContent = payload.contact_number || 'Not provided';
-                        document.getElementById('val-emergency').textContent = payload.emergency_contact || 'Not provided';
-                        
-                        // Switch back to view mode
-                        isEditing = false;
-                        this.classList.remove('btn-primary');
-                        this.classList.add('btn-secondary');
-                        this.innerHTML = `
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13"/><path d="M18.5 2.50001C18.8978 2.10219 19.4374 1.87869 20 1.87869C20.5626 1.87869 21.1022 2.10219 21.5 2.50001C21.8978 2.89784 22.1213 3.4374 22.1213 4.00001C22.1213 4.56262 21.8978 5.10219 21.5 5.50001L12 15L8 16L9 12L18.5 2.50001Z"/></svg>
-                            Edit Profile
-                        `;
-                        
-                        // Toggle UI Visibility
-                        document.getElementById('val-email').style.display = 'block';
-                        document.getElementById('edit-email').style.display = 'none';
-                        
-                        document.getElementById('val-contact').style.display = 'block';
-                        document.getElementById('edit-contact').style.display = 'none';
-                        
-                        document.getElementById('val-emergency').style.display = 'block';
-                        document.getElementById('edit-emergency').style.display = 'none';
-                    } else {
-                        alert('Failed to save profile updates.');
-                    }
-                } catch (e) {
-                    console.error('Error saving data:', e);
-                    alert('Network error while saving profile.');
-                }
+                // Set default field parameters if you trigger edit actions
+                if(document.getElementById('edit-email')) document.getElementById('edit-email').value = patient.email || '';
+                if(document.getElementById('edit-contact')) document.getElementById('edit-contact').value = patient.contact_number || '';
             }
-        });
+        } catch (err) {
+            console.error("Error loading secure patient details:", err);
+        }
+    }
 
-        // Initialize Page
-        loadPatientsDropdown();
-    </script>
+    // Trigger profile builder automatically once DOM elements are established
+    document.addEventListener('DOMContentLoaded', loadCurrentPatientProfile);
+</script>
 </body>
 </html>

@@ -82,5 +82,26 @@
         "notes": "Raw"
       }
     ]
+  },
+  "P005": {
+    "patient_id": "P005",
+    "patient_name": "Suvan Ravi",
+    "patient_age": 23,
+    "blood_group": "AB+",
+    "allergies": [
+      "Vegetables"
+    ],
+    "symptom": "Love Syndrome",
+    "diagnosis": "Suppa Cocacolastic",
+    "appointment_details": "2 follow up",
+    "dietary_restrictions": "No meat",
+    "prescription": [
+      {
+        "medication": "Meat Lover",
+        "dosage": "2",
+        "duration": "3",
+        "notes": "2"
+      }
+    ]
   }
 }

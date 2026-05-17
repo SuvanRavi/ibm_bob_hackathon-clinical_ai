@@ -428,6 +428,7 @@ def save_patient():
     if not patient_id or not data.get('patient_name'):
         return jsonify({'success': False, 'message': 'Patient ID and name are required'}), 400
 
+    # 1. Update/Save the patient profile structure inside memory
     patients_data[patient_id] = {
         'patient_id':           patient_id,
         'patient_name':         data.get('patient_name', ''),
@@ -441,12 +442,54 @@ def save_patient():
         'prescription':         data.get('prescription', [])
     }
 
+    # 2. Persist profile changes to patients.json
     try:
-        filepath = os.path.join('data', 'patients.json')
-        with open(filepath, 'w') as f:
+        filepath_patients = os.path.join('data', 'patients.json')
+        with open(filepath_patients, 'w') as f:
             json.dump(patients_data, f, indent=2)
     except Exception as e:
-        return jsonify({'success': False, 'message': f'Saved in memory but could not write file: {str(e)}'}), 500
+        return jsonify({'success': False, 'message': f'Could not write to patients file: {str(e)}'}), 500
+
+    # 3. Handle credentials.json updates for new registrations
+    try:
+        filepath_creds = os.path.join('data', 'credentials.json')
+        
+        # Load the latest copy directly from disk to keep records fresh
+        try:
+            with open(filepath_creds, 'r') as f:
+                creds_store = json.load(f)
+        except:
+            creds_store = {"patients": {}, "doctors": {}}
+
+        # Ensure the 'patients' dictionary path key structure exists
+        if 'patients' not in creds_store:
+            creds_store['patients'] = {}
+
+        # If this patient does not have a login entry yet, create one
+        if patient_id not in creds_store['patients']:
+            # Strip non-numeric characters from the ID string (e.g. 'P004' -> '004')
+            numeric_part = ''.join(filter(str.isdigit, patient_id)) or "000"
+            generated_password = f"patient{numeric_part}"
+
+            creds_store['patients'][patient_id] = {
+                'patient_id': patient_id,
+                'password': generated_password
+            }
+
+            # Write the updated credential data structures to disk
+            with open(filepath_creds, 'w') as f:
+                json.dump(creds_store, f, indent=2)
+                
+            # Keep global working memory sync variable up to date
+            global credentials_data
+            credentials_data = creds_store
+
+    except Exception as e:
+        return jsonify({
+            'success': True, 
+            'patient_id': patient_id, 
+            'message': f'Patient saved, but failed to write credentials structure: {str(e)}'
+        })
 
     return jsonify({'success': True, 'patient_id': patient_id})
 
