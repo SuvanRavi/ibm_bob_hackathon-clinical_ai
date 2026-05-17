@@ -381,6 +381,54 @@ def analyze_symptom():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# =========================
+# PROFILE & CONTACTS API
+# =========================
+
+def load_contacts_data():
+    try:
+        filepath = os.path.join('data', 'patient_contacts.json')
+        with open(filepath, 'r') as f:
+            return json.load(f)
+    except:
+        return {}
+
+@app.route('/api/patient-contact/<patient_id>', methods=['GET'])
+def get_patient_contact(patient_id):
+    contacts = load_contacts_data()
+    return jsonify({
+        'success': True,
+        'contact': contacts.get(patient_id, {})
+    })
+
+@app.route('/api/patient-contact', methods=['POST'])
+def save_patient_contact():
+    data = request.get_json()
+    pid = data.get('patient_id')
+    
+    if not pid:
+        return jsonify({'success': False, 'message': 'No patient ID provided'}), 400
+
+    contacts = load_contacts_data()
+    
+    # Store contact details isolated by patient ID
+    contacts[pid] = {
+        'patient_id': pid,
+        'email': data.get('email', ''),
+        'contact_number': data.get('contact_number', ''),
+        'emergency_contact': data.get('emergency_contact', '')
+    }
+    
+    try:
+        os.makedirs('data', exist_ok=True)
+        filepath = os.path.join('data', 'patient_contacts.json')
+        with open(filepath, 'w') as f:
+            json.dump(contacts, f, indent=2)
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
