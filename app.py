@@ -78,7 +78,8 @@ patient_profile = {
     'blood_group': 'O+',
     'contact_number': '+1 (555) 123-4567',
     'email': 'john.anderson@email.com',
-    'primary_doctor': {
+    'primary_doc
+    ': {
         'name': 'Dr. Sarah Johnson',
         'specialty': 'General Practitioner',
         'contact': '+1 (555) 234-5678'
