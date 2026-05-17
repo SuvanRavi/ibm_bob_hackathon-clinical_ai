@@ -1,66 +1,61 @@
 """
-Chatbot Configuration
-Settings for LLM, safety thresholds, and behavior
+Chatbot Configuration (FIXED FOR HF INFERENCE STABILITY)
 """
 
 import os
+from dotenv import load_dotenv
 
-# HuggingFace Configuration
-HF_API_TOKEN = os.environ.get('HF_API_TOKEN', '')  # Set via environment variable
+load_dotenv()
+
+# HuggingFace
+HF_API_TOKEN = os.getenv("HF_API_TOKEN", "").strip()
 HF_API_BASE_URL = "https://api-inference.huggingface.co/models"
 
-# Medical Models on HuggingFace
+# ✅ Stable inference-safe models
 # BioMistral - Medical domain specialized model
 PRIMARY_MODEL = "BioMistral/BioMistral-7B"
 # Alternative medical models
 FALLBACK_MODEL = "mistralai/Mistral-7B-Instruct-v0.2"
-# Other options: "epfl-llm/meditron-7b", "microsoft/BioGPT-Large"
 
 # Model Parameters
-MODEL_TEMPERATURE = 0.3          # Lower = more conservative/factual
-MAX_TOKENS = 500                 # Maximum response length
-REQUEST_TIMEOUT = 30             # API request timeout in seconds
-MAX_RETRIES = 2                  # Number of retries on API failure
+MODEL_TEMPERATURE = 0.3
+MAX_TOKENS = 500
+REQUEST_TIMEOUT = 40
+MAX_RETRIES = 2
 
 # Rate Limiting
-RATE_LIMIT_DELAY = 1.0          # Delay between requests in seconds
+RATE_LIMIT_DELAY = 1.0
 
-# Safety Thresholds
-CONFIDENCE_THRESHOLD = 0.70      # Minimum confidence to provide answer
-ESCALATION_THRESHOLD = 0.50      # Below this, escalate to doctor
-MAX_CONVERSATION_LENGTH = 20     # Maximum messages in history
+# Safety thresholds
+CONFIDENCE_THRESHOLD = 0.70
+ESCALATION_THRESHOLD = 0.50
+MAX_CONVERSATION_LENGTH = 20
 
-# Unsafe Query Patterns (regex patterns to detect)
+# Unsafe patterns
 UNSAFE_PATTERNS = [
-    r'\b(stop|quit|discontinue|cease)\s+(taking|medication|medicine|drug|prescription)',
-    r'\b(diagnose|diagnosis|what\s+do\s+i\s+have|what\'s\s+wrong\s+with\s+me)',
-    r'\b(change|modify|adjust|increase|decrease)\s+(dose|dosage|medication|prescription)',
-    r'\b(instead\s+of|replace|substitute)\s+(medication|medicine|drug)',
-    r'\b(emergency|urgent|severe\s+pain|chest\s+pain|difficulty\s+breathing)',
+    r'\b(stop|quit|discontinue)\s+(taking|medication|drug)',
+    r'\b(diagnose|what\s+do\s+i\s+have|what\'s\s+wrong)',
+    r'\b(change|modify|adjust)\s+(dose|dosage|medication)',
+    r'\b(replace|substitute)\s+(medication|drug)',
+    r'\b(emergency|chest\s+pain|difficulty\s+breathing)',
 ]
 
-# Escalation Triggers
 ESCALATION_KEYWORDS = [
-    'emergency', 'urgent', 'severe', 'chest pain', 'difficulty breathing',
-    'unconscious', 'bleeding heavily', 'allergic reaction', 'overdose',
-    'suicidal', 'heart attack', 'stroke', 'seizure'
+    "emergency", "chest pain", "difficulty breathing",
+    "unconscious", "stroke", "seizure", "overdose"
 ]
 
-# Response Templates
+# Messages
 ESCALATION_MESSAGE = (
-    "I'm unable to confidently answer this based on your medical records. "
-    "Please consult your doctor for medical advice."
+    "I'm unable to confidently answer this. Please consult a healthcare professional."
 )
 
 EMERGENCY_MESSAGE = (
-    "⚠️ This sounds like a medical emergency. Please call emergency services "
-    "immediately or go to the nearest emergency room. If you're experiencing "
-    "severe symptoms, do not wait."
+    "⚠️ Medical emergency detected. Please contact emergency services immediately."
 )
 
 UNSAFE_REQUEST_MESSAGE = (
-    "I cannot provide guidance on this matter as it involves medical decisions "
-    "that require professional consultation. Please speak with your doctor about: {topic}"
+    "I cannot assist with medical treatment decisions. Please consult your doctor regarding: {topic}"
 )
 
 # Dietary Advice by Diagnosis

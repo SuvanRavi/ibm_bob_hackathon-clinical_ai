@@ -43,22 +43,41 @@ class ChatbotService:
     
     def _check_huggingface_available(self) -> bool:
         """Check if HuggingFace API is available and token is set"""
-        if not HF_API_TOKEN:
+        # Re-read from environment at check time — this catches the case where
+        # load_dotenv() in app.py ran AFTER config.py was first imported and
+        # HF_API_TOKEN was captured as '' from the module-level assignment.
+        import os
+        token = os.environ.get('HF_API_TOKEN', '') or HF_API_TOKEN
+
+        if not token:
             print("⚠️ HuggingFace API token not set. Using template-based responses.")
-            print("   Set HF_API_TOKEN environment variable to enable LLM features.")
+            print("   Fix: add HF_API_TOKEN=hf_xxxx to your .env file in the project root.")
             return False
-        
+
         try:
-            # Test API connectivity with a simple request
-            headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
-            response = requests.get(
+            # Test API connectivity by sending an empty string or basic payload to the model endpoint via POST
+            headers = {"Authorization": f"Bearer {token}"}
+            payload = {"inputs": "ping"}
+            
+            response = requests.post(
                 f"{HF_API_BASE_URL}/{PRIMARY_MODEL}",
                 headers=headers,
+                json=payload,
                 timeout=5
             )
-            if response.status_code in [200, 503]:  # 503 means model is loading
+            
+            # 200 means success, 503 means model is loading (token is valid)
+            if response.status_code in [200, 503]:
                 print("✓ HuggingFace API connected successfully")
                 return True
+            elif response.status_code == 401:
+                print("⚠️ HuggingFace token is invalid or expired (401 Unauthorized).")
+                print("   Fix: check your HF_API_TOKEN value at https://huggingface.co/settings/tokens")
+                return False
+            elif response.status_code == 403:
+                print(f"⚠️ HuggingFace token does not have access to {PRIMARY_MODEL} (403 Forbidden).")
+                print("   Fix: accept the model licence at https://huggingface.co/BioMistral/BioMistral-7B")
+                return False
             else:
                 print(f"⚠️ HuggingFace API returned status {response.status_code}. Using template-based responses.")
                 return False
@@ -347,8 +366,10 @@ Assistant:"""
         Returns:
             Generated text or None if failed
         """
+        import os
+        token = os.environ.get('HF_API_TOKEN', '') or HF_API_TOKEN
         headers = {
-            "Authorization": f"Bearer {HF_API_TOKEN}",
+            "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
         }
         

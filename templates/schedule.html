@@ -33,7 +33,6 @@
     (function () {
         const role = localStorage.getItem('userRole');
 
-        // If no role set, send to login
         if (!role) {
             window.location.href = '/login';
             return;
@@ -41,13 +40,11 @@
 
         const currentPath = window.location.pathname;
 
-        // Doctor-only page guard — patients can't access /docprofile
         if (role === 'patient' && currentPath === '/docprofile') {
             window.location.href = '/';
             return;
         }
 
-        // Patient-only page guard — doctors land on /docprofile only
         if (role === 'doctor' && currentPath === '/') {
             window.location.href = '/docprofile';
             return;
@@ -73,20 +70,14 @@
         try {
             await fetch('/api/logout', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'Content-Type': 'application/json' }
             });
         } catch (error) {
             console.error('Logout error:', error);
         }
-        
-        // Clear localStorage
         localStorage.removeItem('userRole');
         localStorage.removeItem('userId');
         localStorage.removeItem('userName');
-        
-        // Redirect to login
         window.location.href = '/login';
     }
 </script>
@@ -104,13 +95,11 @@
                 <section class="booking-section">
                     <!-- AI Medical Chatbot -->
                     <div class="card chatbot-card">
-                        <!-- Header -->
                         <div class="chatbot-header-section">
                             <h3 class="card-title">💬 Medical Assistant</h3>
                             <p class="chatbot-subtitle">Ask about medications, diet, or appointments</p>
                         </div>
                         
-                        <!-- Chat Messages Area -->
                         <div class="chatbot-chat-container">
                             <div class="chatbot-messages" id="chatbot-messages">
                                 <div class="chatbot-message bot-message">
@@ -137,7 +126,6 @@
                             </div>
                         </div>
                         
-                        <!-- Quick Actions -->
                         <div class="chatbot-quick-actions">
                             <button class="quick-action-btn" data-query="What medications am I taking?">
                                 💊 My Medications
@@ -150,7 +138,6 @@
                             </button>
                         </div>
                         
-                        <!-- Input Area -->
                         <div class="chatbot-input-container">
                             <input
                                 type="text"
@@ -171,7 +158,6 @@
                     <div class="card">
                         <h3 class="card-title">Book Your Appointment</h3>
 
-                        <!-- Date Selection -->
                         <div class="form-group">
                             <label for="appointment-date" class="form-label">Select Date</label>
                             <select id="appointment-date" class="form-select">
@@ -182,7 +168,6 @@
                             </select>
                         </div>
 
-                        <!-- Time Slots -->
                         <div class="form-group">
                             <label class="form-label">Available Time Slots</label>
                             <div id="time-slots-container" class="time-slots-grid">
@@ -190,20 +175,16 @@
                             </div>
                         </div>
 
-                        <!-- ✅ Doctor Selector — appears after time slot is picked -->
                         <div id="doctor-selector-area" style="display:none;">
                             <div class="doctor-selector-panel">
                                 <div class="doctor-selector-header">
                                     <span class="doctor-selector-label">Consulting Doctor</span>
                                     <span class="doctor-selector-hint">Choose your preferred doctor</span>
                                 </div>
-                                <div id="doctor-selector-body">
-                                    <!-- Populated by JS -->
-                                </div>
+                                <div id="doctor-selector-body"></div>
                             </div>
                         </div>
 
-                        <!-- Selected Slot Confirmation -->
                         <div id="confirmation-area" class="confirmation-area" style="display: none;">
                             <div class="confirmation-card">
                                 <h4>Selected Appointment</h4>
@@ -231,7 +212,6 @@
                         </div>
                     </div>
 
-                    <!-- Booked Appointments -->
                     {% if booked_appointments %}
                     <div class="card">
                         <h3 class="card-title">Your Upcoming Appointments</h3>
@@ -256,7 +236,6 @@
 
                 <!-- Right Column -->
                 <aside class="reminders-section">
-                    <!-- Medication Reminders -->
                     <div class="card">
                         <h3 class="card-title">Medication Reminders</h3>
                         <div class="reminders-list">
@@ -278,7 +257,6 @@
                         </div>
                     </div>
 
-                    <!-- AI Symptom Analyzer -->
                     <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
                         <h3 class="card-title" style="color: white;">🔬 AI Symptom Analyzer</h3>
                         <p style="margin: 15px 0; font-size: 14px; opacity: 0.95;">
@@ -289,7 +267,6 @@
                         </a>
                     </div>
 
-                    <!-- Upcoming Tasks -->
                     <div class="card">
                         <h3 class="card-title">Upcoming Tasks</h3>
                         <div class="tasks-list">
@@ -334,6 +311,9 @@
     </script>
 
     <script>
+        // ===================================
+        // Appointment Booking Logic
+        // ===================================
         const availableSlots = JSON.parse(document.getElementById('available-slots-data').textContent);
         let selectedDate = null;
         let selectedTime = null;
@@ -444,14 +424,11 @@
                             this.classList.add('selected');
                             selectedTime = this.dataset.time;
 
-                            // Update confirmation summary
                             document.getElementById('selected-date').textContent = selectedDate;
                             document.getElementById('selected-time').textContent = selectedTime;
 
-                            // Show doctor selector first, then confirmation card
                             buildDoctorSelector();
                             confirmationArea.style.display = 'block';
-
                             confirmationArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                         });
 
@@ -463,127 +440,10 @@
             }
         });
 
-        // Cancel selection
+        // Cancel selection — FIXED: no longer wrapping chatbot code inside this handler
         document.getElementById('cancel-selection').addEventListener('click', function () {
             document.querySelectorAll('.time-slot-card').forEach(c => c.classList.remove('selected'));
             document.getElementById('confirmation-area').style.display = 'none';
-
-        // ===================================
-        // Chatbot Functionality
-        // ===================================
-        const chatbotMessages = document.getElementById('chatbot-messages');
-        const chatbotInput = document.getElementById('chatbot-input');
-        const chatbotSend = document.getElementById('chatbot-send');
-        const chatbotTyping = document.getElementById('chatbot-typing');
-        const quickActionBtns = document.querySelectorAll('.quick-action-btn');
-
-        let sessionId = 'session_' + Date.now();
-
-        // Add message to chat
-        function addMessage(text, isBot = false) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `chatbot-message ${isBot ? 'bot-message' : 'user-message'}`;
-            
-            if (isBot) {
-                messageDiv.innerHTML = `
-                    <div class="message-avatar bot-avatar">🤖</div>
-                    <div class="message-content">${formatMessage(text)}</div>
-                `;
-            } else {
-                messageDiv.innerHTML = `
-                    <div class="message-content">${escapeHtml(text)}</div>
-                    <div class="message-avatar user-avatar">👤</div>
-                `;
-            }
-            
-            chatbotMessages.appendChild(messageDiv);
-            chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
-        }
-
-        // Format bot message with markdown-like syntax
-        function formatMessage(text) {
-            // Convert **bold** to <strong>
-            text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            
-            // Convert bullet points
-            text = text.replace(/^[•\-\*]\s+(.+)$/gm, '<li>$1</li>');
-            
-            // Wrap lists in <ul>
-            text = text.replace(/(<li>.*<\/li>\s*)+/g, '<ul>$&</ul>');
-            
-            // Convert line breaks
-            text = text.replace(/\n/g, '<br>');
-            
-            return text;
-        }
-
-        // Escape HTML to prevent XSS
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // Send message to chatbot
-        async function sendMessage(query) {
-            if (!query.trim()) return;
-            
-            // Add user message
-            addMessage(query, false);
-            chatbotInput.value = '';
-            
-            // Show typing indicator
-            chatbotTyping.style.display = 'block';
-            chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
-            
-            try {
-                const response = await fetch('/api/chatbot/query', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        query: query,
-                        session_id: sessionId
-                    })
-                });
-                
-                const data = await response.json();
-                
-                // Hide typing indicator
-                chatbotTyping.style.display = 'none';
-                
-                if (data.success) {
-                    addMessage(data.response, true);
-                } else {
-                    addMessage('Sorry, I encountered an error. Please try again.', true);
-                }
-            } catch (error) {
-                console.error('Chatbot error:', error);
-                chatbotTyping.style.display = 'none';
-                addMessage('Sorry, I\'m having trouble connecting. Please try again later.', true);
-            }
-        }
-
-        // Send button click
-        chatbotSend.addEventListener('click', () => {
-            sendMessage(chatbotInput.value);
-        });
-
-        // Enter key to send
-        chatbotInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                sendMessage(chatbotInput.value);
-            }
-        });
-
-        // Quick action buttons
-        quickActionBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const query = btn.dataset.query;
-                sendMessage(query);
-            });
-        });
             document.getElementById('doctor-selector-area').style.display = 'none';
             selectedTime = null;
             selectedDoctor = null;
@@ -650,6 +510,105 @@
                 this.style.display = 'none';
                 location.reload();
             }
+        });
+
+
+        // ===================================
+        // Chatbot Logic — FIXED: properly placed at top level, not nested inside cancel handler
+        // ===================================
+        const chatbotMessages = document.getElementById('chatbot-messages');
+        const chatbotInput = document.getElementById('chatbot-input');
+        const chatbotSend = document.getElementById('chatbot-send');
+        const chatbotTyping = document.getElementById('chatbot-typing');
+        const quickActionBtns = document.querySelectorAll('.quick-action-btn');
+
+        let sessionId = 'session_' + Date.now();
+
+        function addMessage(text, isBot = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chatbot-message ${isBot ? 'bot-message' : 'user-message'}`;
+
+            if (isBot) {
+                messageDiv.innerHTML = `
+                    <div class="message-avatar bot-avatar">🤖</div>
+                    <div class="message-content">${formatMessage(text)}</div>
+                `;
+            } else {
+                messageDiv.innerHTML = `
+                    <div class="message-content">${escapeHtml(text)}</div>
+                    <div class="message-avatar user-avatar">👤</div>
+                `;
+            }
+
+            chatbotMessages.appendChild(messageDiv);
+            chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+        }
+
+        function formatMessage(text) {
+            text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            text = text.replace(/^[•\-\*]\s+(.+)$/gm, '<li>$1</li>');
+            text = text.replace(/(<li>.*<\/li>\s*)+/g, '<ul>$&</ul>');
+            text = text.replace(/\n/g, '<br>');
+            return text;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function sendMessage(query) {
+            if (!query.trim()) return;
+
+            addMessage(query, false);
+            chatbotInput.value = '';
+
+            chatbotTyping.style.display = 'block';
+            chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+
+            try {
+                const response = await fetch('/api/chatbot/query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        query: query,
+                        session_id: sessionId
+                    })
+                });
+
+                const data = await response.json();
+                chatbotTyping.style.display = 'none';
+
+                if (data.success) {
+                    addMessage(data.response, true);
+                } else {
+                    addMessage('Sorry, I encountered an error. Please try again.', true);
+                }
+            } catch (error) {
+                console.error('Chatbot error:', error);
+                chatbotTyping.style.display = 'none';
+                addMessage("Sorry, I'm having trouble connecting. Please try again later.", true);
+            }
+        }
+
+        // Send button
+        chatbotSend.addEventListener('click', () => {
+            sendMessage(chatbotInput.value);
+        });
+
+        // Enter key
+        chatbotInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage(chatbotInput.value);
+            }
+        });
+
+        // Quick action buttons
+        quickActionBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                sendMessage(btn.dataset.query);
+            });
         });
     </script>
 </body>

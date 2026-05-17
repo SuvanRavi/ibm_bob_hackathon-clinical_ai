@@ -9,6 +9,8 @@ import os
 import sys
 import json
 import secrets
+from dotenv import load_dotenv
+load_dotenv()
 
 # Add model directory to path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'model'))
@@ -17,7 +19,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Session configuration
-app.secret_key = secrets.token_hex(32)  # Generate secure secret key
+app.secret_key = secrets.token_hex(32)
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=2)
 
@@ -69,7 +71,6 @@ CURRENT_PATIENT_ID = 'P001'
 # =========================
 
 def login_required(f):
-    """Decorator to protect routes that require authentication"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session:
@@ -78,7 +79,6 @@ def login_required(f):
     return decorated_function
 
 def get_session_user():
-    """Get current authenticated user from session"""
     return {
         'user_id': session.get('user_id'),
         'role': session.get('role'),
@@ -118,11 +118,8 @@ def get_patient_appointments(patient_id):
     for apt_id, apt in appointments_data.items():
         if apt['patient_id'] == patient_id and apt['status'] == 'scheduled':
             doctor = doctors_data.get(apt['doctor_id'], {})
-
-            # ✅ Prefer directly stored name/specialty (localStorage doctors)
             doctor_name     = apt.get('doctor_name') or doctor.get('name', 'Unknown Doctor')
             doctor_specialty = apt.get('doctor_specialty') or doctor.get('specialty', 'General')
-
             patient_appointments.append({
                 'appointment_id': apt_id,
                 'date': apt['date'],
@@ -138,7 +135,6 @@ def get_patient_appointments(patient_id):
 def get_medication_reminders(patient_id):
     patient = patients_data.get(patient_id, {})
     prescriptions = patient.get('prescription', [])
-
     reminders = []
     for med in prescriptions:
         reminders.append({
@@ -157,17 +153,27 @@ def get_medication_reminders(patient_id):
 @app.route('/')
 @login_required
 def index():
+    user_id = session.get('user_id')
+    medication_reminders = get_medication_reminders(user_id)
+    booked_appointments = get_patient_appointments(user_id)
     return render_template('schedule.html',
                          available_slots=available_slots,
-                         upcoming_tasks=upcoming_tasks)
+                         upcoming_tasks=upcoming_tasks,
+                         medication_reminders=medication_reminders,
+                         booked_appointments=booked_appointments)
 
 
 @app.route('/schedule')
 @login_required
 def schedule():
+    user_id = session.get('user_id')
+    medication_reminders = get_medication_reminders(user_id)
+    booked_appointments = get_patient_appointments(user_id)
     return render_template('schedule.html',
                          available_slots=available_slots,
-                         upcoming_tasks=upcoming_tasks)
+                         upcoming_tasks=upcoming_tasks,
+                         medication_reminders=medication_reminders,
+                         booked_appointments=booked_appointments)
 
 
 @app.route('/appointments')
@@ -197,9 +203,7 @@ def profile():
         ],
         'emergency_contact': patient.get('emergency_contact', {})
     }
-
-    return render_template('profile.html',
-                         patient_profile=patient_profile)
+    return render_template('profile.html', patient_profile=patient_profile)
 
 
 @app.route('/symptom-analyzer')
@@ -224,18 +228,13 @@ def docprofile():
 
 @app.route('/api/doc-profile', methods=['GET'])
 def get_doc_profile():
-    return jsonify({
-        "success": True,
-        "profile": GLOBAL_DOCTOR_PROFILE
-    })
+    return jsonify({"success": True, "profile": GLOBAL_DOCTOR_PROFILE})
 
 
 @app.route('/api/doc-profile', methods=['POST'])
 def update_doc_profile():
     global GLOBAL_DOCTOR_PROFILE
-
     data = request.get_json()
-
     GLOBAL_DOCTOR_PROFILE = {
         "doctor_id": data.get("doctor_id", ""),
         "name": data.get("name", ""),
@@ -243,17 +242,11 @@ def update_doc_profile():
         "experience": data.get("experience", ""),
         "bio": data.get("bio", "")
     }
-
-    return jsonify({
-        "success": True,
-        "message": "Doctor profile updated successfully",
-        "profile": GLOBAL_DOCTOR_PROFILE
-    })
+    return jsonify({"success": True, "message": "Doctor profile updated successfully", "profile": GLOBAL_DOCTOR_PROFILE})
 
 
 @app.route('/login')
 def login():
-    # If already logged in, redirect to appropriate page
     if 'user_id' in session:
         if session.get('role') == 'doctor':
             return redirect(url_for('docprofile'))
@@ -264,18 +257,13 @@ def login():
 
 @app.route('/api/authenticate', methods=['POST'])
 def authenticate():
-    """Authenticate user and create session"""
     data = request.get_json()
     user_id = data.get('user_id', '').strip()
     password = data.get('password', '').strip()
-    
+
     if not user_id or not password:
-        return jsonify({
-            'success': False,
-            'message': 'Please enter both User ID and Password'
-        }), 400
-    
-    # Determine role from user_id prefix
+        return jsonify({'success': False, 'message': 'Please enter both User ID and Password'}), 400
+
     role = None
     if user_id.startswith('P'):
         role = 'patient'
@@ -284,37 +272,27 @@ def authenticate():
         role = 'doctor'
         credentials = credentials_data.get('doctors', {})
     else:
-        return jsonify({
-            'success': False,
-            'message': 'Invalid User ID format. Use P### for patients or D### for doctors'
-        }), 401
-    
-    # Verify credentials
+        return jsonify({'success': False, 'message': 'Invalid User ID format. Use P### for patients or D### for doctors'}), 401
+
     user_creds = credentials.get(user_id)
     if not user_creds or user_creds.get('password') != password:
-        return jsonify({
-            'success': False,
-            'message': 'Invalid User ID or Password'
-        }), 401
-    
-    # Load user profile data
+        return jsonify({'success': False, 'message': 'Invalid User ID or Password'}), 401
+
     if role == 'patient':
         user_profile = patients_data.get(user_id, {})
         user_name = user_profile.get('patient_name', 'Unknown Patient')
     else:
         user_profile = doctors_data.get(user_id, {})
         user_name = user_profile.get('name', 'Unknown Doctor')
-    
-    # Create session
+
     session.permanent = True
     session['user_id'] = user_id
     session['role'] = role
     session['name'] = user_name
     session['profile'] = user_profile
-    
-    # Determine redirect URL
+
     redirect_url = '/docprofile' if role == 'doctor' else '/'
-    
+
     return jsonify({
         'success': True,
         'message': 'Login successful',
@@ -327,22 +305,14 @@ def authenticate():
 
 @app.route('/api/logout', methods=['POST'])
 def logout():
-    """Clear session and logout user"""
     session.clear()
-    return jsonify({
-        'success': True,
-        'message': 'Logged out successfully'
-    })
+    return jsonify({'success': True, 'message': 'Logged out successfully'})
 
 
 @app.route('/api/session', methods=['GET'])
 def get_session():
-    """Get current session data"""
     if 'user_id' not in session:
-        return jsonify({
-            'authenticated': False
-        })
-    
+        return jsonify({'authenticated': False})
     return jsonify({
         'authenticated': True,
         'user_id': session.get('user_id'),
@@ -353,7 +323,7 @@ def get_session():
 
 
 # =========================
-# EXISTING APIs (UNCHANGED)
+# EXISTING APIs
 # =========================
 
 @app.route('/api/book', methods=['POST'])
@@ -363,9 +333,7 @@ def book_appointment():
     date = data.get('date')
     time = data.get('time')
     doctor_id = data.get('doctor_id', 'LOCAL')
-
-    # ✅ Accept doctor info directly from frontend (localStorage doctors)
-    doctor_name     = data.get('doctor_name', '')
+    doctor_name = data.get('doctor_name', '')
     doctor_specialty = data.get('doctor_specialty', '')
 
     if not date or not time:
@@ -376,21 +344,19 @@ def book_appointment():
 
         new_apt_id = f"A{str(len(appointments_data) + 1).zfill(3)}"
 
-        # ✅ Fall back to doctors_data if it's a known doctor_id
         if not doctor_name:
             doctor = doctors_data.get(doctor_id, {})
-            doctor_name     = doctor.get('name', 'Unknown Doctor')
+            doctor_name = doctor.get('name', 'Unknown Doctor')
             doctor_specialty = doctor.get('specialty', 'General')
 
-        # Use session user_id instead of hardcoded CURRENT_PATIENT_ID
         patient_id = session.get('user_id')
 
         new_appointment = {
             'appointment_id': new_apt_id,
             'patient_id': patient_id,
             'doctor_id': doctor_id,
-            'doctor_name': doctor_name,           # ✅ store name directly
-            'doctor_specialty': doctor_specialty, # ✅ store specialty directly
+            'doctor_name': doctor_name,
+            'doctor_specialty': doctor_specialty,
             'date': date,
             'time': time,
             'status': 'scheduled',
@@ -400,7 +366,6 @@ def book_appointment():
         }
 
         appointments_data[new_apt_id] = new_appointment
-
         return jsonify({'success': True, 'message': 'Appointment booked successfully'})
 
     return jsonify({'success': False, 'message': 'Slot not available'}), 400
@@ -416,11 +381,7 @@ def get_doctors():
     return jsonify({
         'success': True,
         'doctors': [
-            {
-                'doctor_id': doc_id,
-                'name': doc['name'],
-                'specialty': doc['specialty']
-            }
+            {'doctor_id': doc_id, 'name': doc['name'], 'specialty': doc['specialty']}
             for doc_id, doc in doctors_data.items()
         ]
     })
@@ -431,19 +392,15 @@ def get_doctors():
 def get_patient():
     user_id = session.get('user_id')
     patient = patients_data.get(user_id, {})
-    return jsonify({
-        'success': True,
-        'patient': patient
-    })
+    return jsonify({'success': True, 'patient': patient})
+
 
 @app.route('/api/all-patients', methods=['GET'])
 @login_required
 def get_all_patients():
-    return jsonify({
-        'success': True,
-        'patients': patients_data
-    })
-    
+    return jsonify({'success': True, 'patients': patients_data})
+
+
 @app.route('/patientinfo')
 @login_required
 def patientinfo():
@@ -453,7 +410,6 @@ def patientinfo():
 @app.route('/api/next-patient-id')
 def next_patient_id():
     existing = list(patients_data.keys())
-    # Extract numeric parts and find the next one
     nums = []
     for pid in existing:
         try:
@@ -485,7 +441,6 @@ def save_patient():
         'prescription':         data.get('prescription', [])
     }
 
-    # Persist to the JSON file
     try:
         filepath = os.path.join('data', 'patients.json')
         with open(filepath, 'w') as f:
@@ -496,34 +451,27 @@ def save_patient():
     return jsonify({'success': True, 'patient_id': patient_id})
 
 
-
 # =========================
-# SYMPTOM ANALYZER (UNCHANGED)
+# SYMPTOM ANALYZER
 # =========================
 
 @app.route('/api/analyze-symptom', methods=['POST'])
 def analyze_symptom():
     try:
         service = get_inference_service()
-
         if service is None:
-            return jsonify({
-                'success': False,
-                'error': 'Model not available'
-            }), 503
+            return jsonify({'success': False, 'error': 'Model not available'}), 503
 
         data = request.get_json()
-
         image_data = data['image'].split(',')[-1]
         image_bytes = base64.b64decode(image_data)
         image = Image.open(io.BytesIO(image_bytes))
-
         result = service.analyze_symptom(image)
-
         return jsonify(result)
 
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
 
 # =========================
 # PROFILE & CONTACTS API
@@ -537,32 +485,29 @@ def load_contacts_data():
     except:
         return {}
 
+
 @app.route('/api/patient-contact/<patient_id>', methods=['GET'])
 def get_patient_contact(patient_id):
     contacts = load_contacts_data()
-    return jsonify({
-        'success': True,
-        'contact': contacts.get(patient_id, {})
-    })
+    return jsonify({'success': True, 'contact': contacts.get(patient_id, {})})
+
 
 @app.route('/api/patient-contact', methods=['POST'])
 def save_patient_contact():
     data = request.get_json()
     pid = data.get('patient_id')
-    
+
     if not pid:
         return jsonify({'success': False, 'message': 'No patient ID provided'}), 400
 
     contacts = load_contacts_data()
-    
-    # Store contact details isolated by patient ID
     contacts[pid] = {
         'patient_id': pid,
         'email': data.get('email', ''),
         'contact_number': data.get('contact_number', ''),
         'emergency_contact': data.get('emergency_contact', '')
     }
-    
+
     try:
         os.makedirs('data', exist_ok=True)
         filepath = os.path.join('data', 'patient_contacts.json')
@@ -572,39 +517,39 @@ def save_patient_contact():
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
+
 # =========================
 # CHATBOT API ENDPOINTS
+# FIXED: use session user_id instead of hardcoded CURRENT_PATIENT_ID
 # =========================
 
-# Import chatbot service
 from chatbot.service import get_chatbot_service
 
+
 @app.route('/api/chatbot/query', methods=['POST'])
+@login_required
 def chatbot_query():
     """Process chatbot query"""
     try:
         data = request.get_json()
         query = data.get('query', '')
         session_id = data.get('session_id')
-        
+
         if not query:
-            return jsonify({
-                'success': False,
-                'message': 'Query is required'
-            }), 400
-        
-        # Get chatbot service
+            return jsonify({'success': False, 'message': 'Query is required'}), 400
+
+        # FIXED: use the logged-in patient's ID from session, not the hardcoded constant
+        patient_id = session.get('user_id', CURRENT_PATIENT_ID)
+
         chatbot = get_chatbot_service()
-        
-        # Process query with current patient ID
         result = chatbot.process_query(
-            patient_id=CURRENT_PATIENT_ID,
+            patient_id=patient_id,
             query=query,
             session_id=session_id
         )
-        
+
         return jsonify(result)
-        
+
     except Exception as e:
         return jsonify({
             'success': False,
@@ -615,80 +560,47 @@ def chatbot_query():
 
 @app.route('/api/chatbot/status', methods=['GET'])
 def chatbot_status():
-    """Check chatbot service status"""
     try:
         chatbot = get_chatbot_service()
-        
         return jsonify({
             'available': True,
             'message': 'Chatbot service is ready',
             'huggingface_available': chatbot.use_huggingface,
             'mode': 'LLM' if chatbot.use_huggingface else 'Template'
         })
-        
     except Exception as e:
-        return jsonify({
-            'available': False,
-            'message': f'Chatbot service unavailable: {str(e)}'
-        }), 503
+        return jsonify({'available': False, 'message': f'Chatbot service unavailable: {str(e)}'}), 503
 
 
 @app.route('/api/chatbot/history', methods=['GET'])
 def chatbot_history():
-    """Get conversation history"""
     try:
         session_id = request.args.get('session_id')
-        
         if not session_id:
-            return jsonify({
-                'success': False,
-                'message': 'Session ID is required'
-            }), 400
-        
+            return jsonify({'success': False, 'message': 'Session ID is required'}), 400
+
         chatbot = get_chatbot_service()
         history = chatbot.get_conversation_history(session_id)
-        
-        return jsonify({
-            'success': True,
-            'history': history,
-            'session_id': session_id
-        })
-        
+        return jsonify({'success': True, 'history': history, 'session_id': session_id})
+
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/api/chatbot/clear', methods=['POST'])
 def chatbot_clear():
-    """Clear conversation history"""
     try:
         data = request.get_json()
         session_id = data.get('session_id')
-        
         if not session_id:
-            return jsonify({
-                'success': False,
-                'message': 'Session ID is required'
-            }), 400
-        
+            return jsonify({'success': False, 'message': 'Session ID is required'}), 400
+
         chatbot = get_chatbot_service()
         chatbot.clear_conversation_history(session_id)
-        
-        return jsonify({
-            'success': True,
-            'message': 'Conversation history cleared'
-        })
-        
+        return jsonify({'success': True, 'message': 'Conversation history cleared'})
+
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 if __name__ == '__main__':
